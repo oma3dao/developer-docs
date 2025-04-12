@@ -1,0 +1,28 @@
+{
+  "id": "tokenized-app",
+  "title": "Tokenized Applications",
+  "description": "A tokenized application is an ERC-721 NFT with standardized metadata that describes the app, its ownership, and how it should be presented or launched. Below is a breakdown of each metadata field:",
+  "source": "@site/docs/tokenized-app.md",
+  "sourceDirName": ".",
+  "slug": "/tokenized-app",
+  "permalink": "/tokenized-app",
+  "draft": false,
+  "unlisted": false,
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "id": "tokenized-app",
+    "title": "Tokenized Applications",
+    "sidebar_position": 2
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Overview",
+    "permalink": "/"
+  },
+  "next": {
+    "title": "Registration Guide",
+    "permalink": "/registration-guide"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "registration-guide",
+  "title": "Registration Guide",
+  "description": "Anyone can mint a new application token using the OMA3 Application Registry.",
+  "source": "@site/docs/registration-guide.md",
+  "sourceDirName": ".",
+  "slug": "/registration-guide",
+  "permalink": "/registration-guide",
+  "draft": false,
+  "unlisted": false,
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "id": "registration-guide",
+    "title": "Registration Guide",
+    "sidebar_position": 3
+  },
+  "sidebar": "docs",
+  "previous": {
+    "title": "Tokenized Applications",
+    "permalink": "/tokenized-app"
+  }
+}
