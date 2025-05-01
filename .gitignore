@@ -10,9 +10,12 @@
 /out/
 /dist
 .vite/
-
+.docusaurus/
 # testing
 /coverage
+
+# planning
+/background
 
 # misc
 .DS_Store

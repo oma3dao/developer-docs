@@ -2,6 +2,7 @@ const sidebars = {
     docs: [
       'overview',
       'tokenized-app',
+      'infrastructure',
       'registration-guide',
     ],
   };
