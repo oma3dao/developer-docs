@@ -100,7 +100,7 @@ If you're using OMA3's default hosting, you'll also need to provide these metada
 
 | Metadata Field | Description | Example |
 |----------------|-------------|---------|
-| Description URL | URL to a brief app description | "An immersive metaverse exploration app" |
+| Description URL | URL to a plain text file (e.g.- .txt) that contains a brief app description | "An immersive metaverse exploration app" |
 | Icon URL | URL to app icon (PNG/JPG) with max resolution of 1024x1024| See hosting options below |
 | Screenshots | URLs to app screenshots (up to 5) with max resolution of 2048x2048| See hosting options below |
 | Marketing URL | Link to your app's website | `https://www.example.com` |
