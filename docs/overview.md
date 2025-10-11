@@ -5,85 +5,195 @@ slug: /
 sidebar_position: 1
 ---
 
-# App Registry Overview
+# OMATrust Developer Documentation
 
-The OMA3 Application Registry is a **blockchain-based, permissionless registry of applications** designed to replace centralized app store databases. Instead of relying on proprietary app store servers, this registry enables anyone to **mint an application token**, which can then be displayed and launched by compatible apps and websites.
+:::caution Draft Documentation
+This documentation is in **draft format** and under active development. Information may be incomplete, contain errors, or change as the protocol evolves. Please verify critical details against the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs) or join the [OMA3 Discord](https://discord.gg/oma3) for the latest updates.
+:::
 
-<div style={{textAlign: 'center'}}>
-<img src="/img/diagrams/oma3-app-tokenization.png" width="400" alt="OMA3 App Tokenization" />
-</div>
+**The Trust Layer for the Open Internet**
 
-## Purpose of the Registry
+OMATrust is a decentralized verification protocol that brings the security and reliability of curated app stores to the entire internet. Register your websites, APIs, MCP servers, A2A agents, and smart contracts to make them discoverable and verifiable through cryptographic attestations.
 
-The App Registry serves as a permissionless, decentralized alternative to traditional app store backends. It allows:
+**Learn More:**
+- 📄 [OMATrust Whitepaper](https://github.com/oma3dao/omatrust-docs/blob/main/whitepaper/omatrust-whitepaper.md) - Vision, economics, and the future of internet trust
+- 📋 [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification.md) - Technical specification and data formats
 
-- **Open publishing** - Any developer can mint an app token without gatekeepers
-- **Standardized discovery** - Common protocol for finding and listing applications
-- **Interoperability** - Apps can be discovered and launched across different metaverse platforms
-- **Self-sovereignty** - Developers maintain control of their app metadata and deployment
+## The Problem
 
-These app tokens are decentralized, discoverable, and interoperable across the open metaverse. Apps, games, and services that support the **Inter World Portaling System (IWPS)** can query these tokenized applications and present them to users through immersive storefronts, developer portals, or other interface layers.
+The internet lacks a universal trust layer. Current trust mechanisms are fragmented:
 
-<div style={{textAlign: 'center'}}>
-<img src="/img/diagrams/oma3-spatial-store-architecture.png" width="600" alt="OMA3 Spatial Store Architecture" />
-</div>
+- **SSL certificates** only prove domain ownership, not legitimacy or security
+- **Audits and certifications** live in PDFs that can't be programmatically verified
+- **Reputation systems** are siloed inside centralized platforms (Apple App Store, Amazon reviews)
+- **APIs and smart contracts** have no standard way to establish trust
 
-## Key Components
+The lack of trust on the open internet has led to some of the biggest hacks in history, but as AI agents begin transacting at scale the problem becomes much worse: agents can't evaluate trust the way humans do. They need **machine-verifiable proof**.
 
-The decentralized app ecosystem consists of several key components that work together regardless of the specific implementation:
+## The Solution: OMATrust
 
-1. **ERC-721 Contracts** - Extensible NFT contracts that are adapted for tokenizing applications (OMA3's contract is one implementation of many possible registry contracts)
-2. **Decentralized Identifiers (DIDs)** - Unique, cryptographically verifiable identifiers that securely identify applications and link them to their developers
-3. **Reputation Systems** - DID-based trust mechanisms that help users evaluate app quality and security (see "Trust in a Permissionless Environment" below)
-4. **Store Interfaces** - User interfaces that provide discovery and launch capabilities for the decentralized app landscape
-5. **Optional Indexers** - Services that help stores efficiently track and query all the ERC-721 and reputation contracts across the ecosystem, both centralized and decentralized
+OMATrust provides three core primitives:
 
-These components collectively enable a vibrant, open ecosystem for application discovery and distribution without relying on centralized gatekeepers.
+### 1. **App Registry** - Verifiable Identity
 
-## Trust in a Permissionless Environment
+Tokenize your service as an on-chain NFT with metadata:
+- **Websites** - Provide tamper-proof trust information on your service
+- **APIs** - Publish endpoint metadata (OpenAPI, GraphQL, JSON-RPC, MCP, A2A)- OMATrust is the app store for APIs
+- **Smart Contracts** - Establish provenance and cryptographically link audits
+- **Downloadable Binaries** - Give users the same amount of trust in internet binaries as they have in app store binaries
 
-In a permissionless registry where anyone can publish applications, establishing trust becomes crucial. Unlike centralized app stores with manual review processes, the OMA3 App Registry relies on decentralized mechanisms for building trust:
+Each registration creates a permanent, unique identifier that can be referenced across the internet.
 
-### Reputation Systems
+### 2. **Attestations** - Cryptographic Proof
 
-The next major focus for app tokenization will be implementing robust reputation systems that:
-- Track developer history and application quality
-- Aggregate user feedback in a transparent, tamper-resistant way
-- Establish reputation scores that help users make informed decisions
-- Prevent Sybil attacks through identity verification
+Independent auditors and oracles publish verifiable attestations:
+- **Security audits** - Code reviews, penetration testing
+- **Compliance certifications** - GDPR, SOC2, industry standards
+- **Official Endorsements** - Checkmarks from trustworthy institutions
+- **User reviews** - Structured feedback from users
 
-### Attestations and Credentials
+Attestations are stored cross-chain and cryptographically linked to registry identities.
 
-The registry will support verifiable attestations that provide:
-- Security audits from recognized third parties
-- Code quality certifications
-- Privacy compliance validations
-- Age appropriateness ratings
+### 3. **Verification** - Instant Trust Checks
 
-### Credential Issuers
+Clients (humans or AI agents) can instantly verify a service using its registry identity:
+```typescript
+// Check if a service is registered and has valid attestations
+const trustScore = await verifyService('did:web:example.com');
+if (trustScore.hasSecurityAudit && trustScore.uptime > 99.9) {
+  // Safe to use!
+}
+```
 
-Specialized entities will emerge to issue credentials for applications:
-- Professional security auditing organizations
-- Community-governed rating bodies
-- Industry certification programs
-- Subject matter expert attestations
+## Why It Matters
 
-These trust mechanisms will allow the ecosystem to maintain the benefits of permissionless publishing while providing users with tools to evaluate application quality and security.
+**For Developers:**
+- Build reputation that is not locked in walled gardens
+- Increase discoverability of your services
+- Resist censorship of centralized marketplaces
 
-## AppFi: A New Frontier of Application Finance?
+**For Users:**
+- Verify services before using them
+- See real audits, not fake badges
+- Protect against malicious attacks
 
-Tokenizing applications could open an entirely new paradigm we call "AppFi" - Application Finance. Once applications become tokenized assets on the blockchain, they can interact with the broader Web3 ecosystem in ways traditional applications never could.
+**For AI Agents:**
+- Programmatically verify legitimacy
+- Access machine-readable trust data
+- Operate safely at scale
 
-### Potential AppFi Innovations
+## Key Innovations
 
-- **Revenue Sharing and Royalties** - Applications can programmatically distribute revenue to contributors, investors, or community members
-- **Application DAOs** - Decentralized governance of application development and feature prioritization
-- **App Token Fractionalization** - Allowing partial ownership of applications to democratize investment
-- **Development Futures** - Investment in applications pre-launch based on developer reputation
-- **Cross-App Composability** - Applications that can own and integrate with other applications as tokenized assets
-- **Reputation-Based Credit** - Financing based on verifiable app performance metrics and developer history
-- **Application Insurance** - Protection against exploits or downtime through decentralized insurance protocols
+### Cross-Chain Architecture
 
-### Unexplored Territory
+OMATrust is designed to be cross-chain:
+- **OMAchain Testnet** (primary coordination layer)
+- **Ethereum ecosystem, Solana, MOVE** (coming soon)
+- OMAChain deduplication ensures one canonical entry per service
 
-The field of AppFi represents largely unexplored territory. By establishing a standard for tokenized applications, OMA3 is creating the foundation for a wide range of financial and organizational innovations we can't yet predict. We're excited to see what the community builds on top of this infrastructure, as developers experiment with new models for funding, governing, and monetizing decentralized applications.
+### DID-Based Identity
+
+Uses W3C Decentralized Identifiers:
+- `did:web:example.com` - Domain-based identity
+- `did:pkh:eip155:1:0xAddress` - Blockchain-based identity
+
+### Metadata Flexibility
+
+Store metadata on-chain or off-chain:
+- On-chain: Immutable, gas-intensive
+- Off-chain with hash: Efficient, verifiable via dataHash
+
+### Attestation Framework
+
+Built on Ethereum Attestation Service (EAS) for EVM chains:
+- Cryptographically signed
+- Timestamped on-chain
+- Queryable by schema
+
+Support for other virtual machines and ecosystems is coming soon.
+
+## What You Can Register
+
+| Type | Example | Use Case |
+|------|---------|----------|
+| **Website** | `did:web:store.example.com` | E-commerce site verification |
+| **Online Game** | `did:web:game.example.com` | Downloadable binary verification |
+| **REST API** | `did:web:api.example.com` | Service discovery & trust |
+| **GraphQL API** | `did:web:graphql.example.com` | Schema verification |
+| **MCP Server** | `did:web:mcp.example.com` | AI agent integration |
+| **A2A Agent** | `did:web:agent.example.com` | Agent-to-agent trust |
+| **Smart Contract** | `did:pkh:eip155:1:0xAddress` | On-chain provenance |
+
+## Quick Start
+
+### 1. Choose Your DID & Verify Ownership
+
+Pick a Decentralized Identifier (DID) for your service:
+
+**did:web (Domain-based)** - For services with domains
+- Format: `did:web:example.com`
+- Verification: DNS TXT entry or DID document at `/.well-known/did.json`
+- Best for: Websites, APIs, SaaS services
+
+**did:pkh (Blockchain-based)** - For smart contracts
+- Format: `did:pkh:eip155:1:0xContractAddress`
+- Verification: Prove you control the contract
+- Best for: DeFi, NFTs, DAOs
+
+[Learn about DID verification →](./registration-guide.md#step-3-verification--interface-selection)
+
+### 2. Connect & Register
+
+Visit [registry.omatrust.org](https://registry.omatrust.org), click "Get Started", and choose interface type(s):
+- **Human** - Websites and apps with UI
+- **API** - Programmatic services (REST, GraphQL, MCP, A2A, JSON-RPC)
+- **Smart Contract** - On-chain applications
+
+### 3. Add Metadata
+
+Provide interface-specific information through the wizard:
+- Core info: Description, publisher, images
+- Endpoints: API URLs, schemas, RPC endpoints
+- Platforms: Web, mobile, desktop availability
+- Advanced: MCP config, artifact verification
+
+### 4. Collect Attestations
+
+Encourge your ecossytem to visit [reputation.oma3.org](https://reputation.oma3.org) to build trust:
+- Submit security audits
+- Collect user reviews
+- Publish compliance certifications
+
+## Architecture at a Glance
+
+```
+┌─────────────────────────────────────────────────┐
+│  Clients (Users, AI Agents, Apps)               │
+│  Query registry + attestations for trust data   │
+└─────────────────┬───────────────────────────────┘
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+┌───────▼────────┐   ┌──────▼─────────┐
+│  App Registry  │   │  Attestations  │
+│  (NFTs)        │   │  (EAS Schemas) │
+└───────┬────────┘   └───────┬────────┘
+        │                    │
+        └─────────┬──────────┘
+                  │
+        ┌─────────▼──────────┐
+        │  OMAchain Testnet  │
+        │  (Coordination)    │
+        └────────────────────┘
+```
+
+## Next Steps
+
+- **[What is a Tokenized Service?](./tokenized-app.md)** - Understand the data model
+- **[Registration Guide](./registration-guide.md)** - Step-by-step walkthrough
+- **[Client Integration](./client-guide.md)** - Query and verify services
+- **[Cookbooks](./cookbooks/register-website.md)** - Specific use cases
+
+---
+
+**Ready to build trust into the open internet?** Start by registering your first service at [registry.omatrust.org](https://registry.omatrust.org).

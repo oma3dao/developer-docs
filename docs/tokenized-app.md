@@ -1,106 +1,424 @@
 ---
 id: tokenized-app
-title: Tokenized Applications
-sidebar_position: 2
+title: What is a Tokenized Service?
+sidebar_position: 3
 ---
 
-# What is a Tokenized Application?
+# What is a Tokenized Service?
 
-A tokenized application is an **ERC-721 NFT** with standardized metadata extensions that describes the app, its ownership, and how it should be presented or launched. Below is a breakdown of each NFT field:
+:::caution Draft Documentation
+This documentation is in **draft format** and subject to change. Field definitions and data structures may evolve. Verify against the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs) for the latest details.
+:::
 
-| Field | Description |
-|-------|-------------|
-| `name` | The application name (max 32 bytes). |
-| `version` | Version number in `x.y.z` format (e.g., `1.0.0`). |
-| `did` | A [Decentralized Identifier](https://www.w3.org/TR/did-core/), often in the format `did:web:websiteurl`. Proves app identity. |
-| `dataUrl` | A GraphQL-compatible endpoint returning offchain metadata like app icon, screenshots, description, and marketing site. |
-| `iwpsPortalUri` | The first API endpoint the app store hits when launching the app, as defined in the [IWPS spec](https://github.com/oma3dao/iwps-specification). |
-| `agentApiUri` | *(Optional)* Reserved for future agent-based interactions. |
-| `contractAddress` | A [CAIP-2](https://chainagnostic.org/CAIPs/caip-2) compliant blockchain address of the app's associated smart contract. |
+A tokenized service in OMATrust is an **ERC-721 NFT** that represents a verifiable identity for any online service: websites, APIs, smart contracts, or AI agents. Each token includes standardized metadata that enables discovery, verification, and trust-building.
 
-## Example `dataUrl` Response
+## Token Structure
 
-```json
-{
-  "descriptionUrl": "https://spatialstore.myworld.com/dataurl/description.txt",
-  "iwpsUrl": "https://spatialstore.myworld.com/dataurl/iwps-url",
-  "agentUrl": "https://spatialstore.myworld.com/dataurl/agent-url",
-  "image": "https://spatialstore.myworld.com/dataurl/appicon.png",
-  "screenshotUrls": [
-    "https://spatialstore.myworld.com/dataurl/screenshot1.png",
-    "https://spatialstore.myworld.com/dataurl/screenshot2.png"
-  ],
-  "external_url": "https://spatialstore.myworld.com/",
-  "token": "eip155:1:0x1234567890abcdef",
-  "platforms": {
-    "web": {
-      "url_launch": "https://spatialstore.myworld.com/play"
-    },
-    "ios": {
-      "url_download": "https://apps.apple.com/app/id123456789",
-      "url_launch": "https://spatialstore.myworld.com/play", 
-      "supported": ["iPhone", "iPad", "VisionPro"]
-    },
-    "android": {
-      "url_download": "https://play.google.com/store/apps/details?id=com.myworld.spatialstore", 
-      "url_launch": "https://spatialstore.myworld.com/play" 
-    }
-  }  
-}
-```
+Every tokenized service is an NFT with the following on-chain data:
 
-## IWPS Integration
+| Field | Type | Description |
+|-------|------|-------------|
+| `did` | string | Decentralized Identifier (e.g., `did:web:example.com`) |
+| `versionMajor` | uint8 | Major version number (indexed for lookups) |
+| `versionHistory` | Version[] | Complete version history (major.minor.patch) |
+| `interfaces` | uint16 | Bitmap: 1=Human, 2=API, 4=Contract |
+| `dataUrl` | string | URL to off-chain metadata JSON |
+| `dataHash` | bytes32 | Hash of metadata for integrity verification |
+| `dataHashAlgorithm` | uint8 | Hash algorithm: 0=keccak256, 1=sha256 |
+| `contractId` | string | CAIP-10 contract address (optional) |
+| `fungibleTokenId` | string | CAIP-19 token ID (optional) |
+| `traitHashes` | bytes32[] | Searchable tags (hashed) |
+| `minter` | address | Original creator |
+| `status` | uint8 | 0=Active, 1=Deprecated, 2=Replaced |
 
-The Inter-World Portaling System (IWPS) is protocol that enables applications to be downloaded and launched across different operating systems and devices. Developers need to understand this protocol to effectively integrate with the tokenized application ecosystem.
+## Interface Types
 
-### What is IWPS?
+Services can support one or more interface types:
 
-IWPS (Inter-World Portaling System) is an API specification that enables seamless teleportation between diverse virtual worlds, applications, and platforms. It provides the framework for building an "open metaverse" with features for identity management, asset transfer, and secure communications.
+### Human Interface (1)
 
-### Portal URI
+**Target Audience:** End users interacting through GUI
 
-The `iwpsPortalUri` field in tokenized applications is the entry point for the IWPS protocol:
+**Use Cases:**
+- Websites
+- Mobile/desktop apps
+- Web3 dApps
+- Games
+- VR/AR experiences
 
-**Format:** A standard URI that points to the application's portal endpoint
+**Required Metadata:**
+- App icon (1024x1024 recommended)
+- Screenshots (at least 1, up to 5)
+- Platform availability (web, iOS, Android, etc.)
 
-**Example:** `https://myapp.example.com/iwps/portal`
+**Optional Metadata:**
+- Video URLs (demos, trailers)
+- 3D assets (GLB, USDZ for AR/VR)
+- IWPS portal URL (metaverse integration)
 
-When a user wants to launch your application from another app or store, this URI is called with specific parameters to initiate the teleportation process.
+### API Interface (2)
 
-### Key IWPS Components
+**Target Audience:** Developers, bots, and AI agents
 
-The IWPS specification defines:
+**Use Cases:**
+- REST APIs
+- GraphQL APIs
+- JSON-RPC services
+- MCP servers (Model Context Protocol)
+- A2A agents (Agent-to-Agent)
 
-1. **Query API** - Allows applications to discover capabilities and requirements before teleporting
-2. **Teleport API** - Facilitates the actual teleportation between worlds
-3. **Authentication Mechanisms** - Ensures secure and trusted communications
-4. **Identity Framework** - Standardizes user identity across different applications
-5. **Asset Transfer Protocol** - Enables users to bring relevant assets between worlds
+**Required Metadata:**
+- Endpoint URL
+- API type (via traits: `api:rest`, `api:graphql`, `api:mcp`, etc.)
 
-### Further Reading
+**Optional Metadata:**
+- Schema URL (OpenAPI spec, GraphQL SDL, etc.)
+- Interface versions (e.g., ["v1", "v2"])
+- MCP configuration (tools, resources, prompts)
 
-For comprehensive implementation details, developers should review the complete [IWPS specification](https://github.com/oma3dao/iwps-specification) available in the OMA3 GitHub repository.
+### Smart Contract Interface (4)
 
-## Decentralized Identifiers (DIDs) in the App Registry
+**Target Audience:** On-chain applications
 
-Decentralized Identifiers (DIDs) serve as the foundational component for establishing verifiable, decentralized digital identity for actors in the OMA3 registry. The App Registry currently does not disallow certain types of DIDs (called "DID methods" in the W3C standard) but we encourage use of the following:
+**Use Cases:**
+- DeFi protocols
+- NFT contracts
+- DAOs
+- Token contracts
+
+**Required Metadata:**
+- Contract address (in contractId: `did:pkh:eip155:1:0xAddress`)
+
+**Optional Metadata:**
+- Recommended RPC endpoint
+- ABI schema URL
+
+### Combining Interfaces
+
+Services can support multiple interfaces:
+
+**Examples:**
+- `interfaces = 3` (Human + API) - Web app with programmatic access
+- `interfaces = 7` (All) - Full-stack dApp with contract backend
+
+## Decentralized Identifiers (DIDs)
 
 ### did:web
 
-The `did:web` method links an application to a domain name, providing a familiar and accessible way to verify identity.
+**Format:** `did:web:<domain>[:<path>]`
 
-**Format:** `did:web:<domain-name>[:<path>]`
+**Example:** `did:web:api.example.com`
 
-**Example:** `did:web:myapp.example.com`
+**Verification:** 
+- Fetch `https://<domain>/.well-known/did.json`
+- Verify wallet address in DID document
+- Oracle attests ownership to resolver
 
-`did:web` works by storing DID documents at well-known URLs, typically at `https://<domain-name>/.well-known/did.json`. This allows anyone to verify that the owner of the domain name is also the controller of the DID.  Ideally actors that use this DID are verfied that they actually own the domain.
+**Best For:**
+- Services with domains
+- Websites and APIs
+- Established brands
 
-### did:eth (and other blockchain-based methods)
+### did:pkh
 
-The `did:eth` method uses Ethereum addresses as identifiers, leveraging the established Ethereum blockchain for decentralized identity.
+**Format:** `did:pkh:<namespace>:<chainId>:<address>`
 
-**Format:** `did:eth:<ethereum-address>`
+**Example:** `did:pkh:eip155:1:0x1234...5678`
 
-**Example:** `did:eth:0x71C7656EC7ab88b098defB751B7401B5f6d8976F`
+**Verification:**
+- Extract chain and address from DID
+- Verify wallet controls contract
+- Oracle attests ownership
 
-This method is widespread in Web3 applications and provides a direct link between the application's identity and an Ethereum account. It enables cryptographic verification without requiring domain ownership, making it accessible for blockchain-native applications and developers.
+**Best For:**
+- Smart contracts
+- On-chain applications
+- Chain-native services
+
+## Metadata Storage: On-Chain vs Off-Chain
+
+### Off-Chain Metadata
+
+**Approach:** Store JSON at `dataUrl`, store hash on-chain
+
+```json
+dataUrl: "https://example.com/metadata.json"
+dataHash: "0xabc123..." (keccak256 of JSON)
+```
+
+**Benefits:**
+- ✅ Gas efficient
+- ✅ Large metadata (no size limits)
+- ✅ Easy updates
+- ✅ Verifiable via hash
+
+**Trade-offs:**
+- ❌ Requires hosting
+- ❌ Availability risk (host could go down)
+
+### On-Chain Metadata
+
+**Approach:** Store JSON string via registry contract
+
+```solidity
+// Call through registry (not metadata contract directly)
+registry.setMetadataJson(did, major, minor, patch, jsonString, hash, algorithm)
+```
+
+**Note:** The registry contract forwards to the metadata contract. Direct calls to metadata contract are restricted.
+
+**Benefits:**
+- ✅ Permanent storage
+- ✅ No hosting needed
+- ✅ Censorship resistant
+
+**Trade-offs:**
+- ❌ Expensive (gas costs)
+- ❌ Size limits (~24KB practical limit)
+- ❌ Must call via registry contract (not metadata contract directly)
+
+### Choosing Your Approach
+
+**Use on-chain metadata when:**
+- You don't want to host your own dataUrl endpoint
+- Metadata provenance is desired
+- Small metadata size (< 10KB)
+- Gas cost is not a concern
+
+**Use off-chain metadata when:**
+- Large metadata (multiple interfaces, many platform downloads, etc.)
+- More control over the dataUrl endpoint is desired
+- Want to minimize gas costs
+- Have reliable hosting available
+
+
+## Version Management
+
+### Semantic Versioning
+
+Format: `major.minor.patch`
+
+**Major version changes:**
+- Breaking changes to API
+- Complete redesigns
+- New contract deployment
+
+**Minor version changes:**
+- New features
+- Non-breaking API additions
+- Metadata updates
+
+**Patch version changes:**
+- Bug fixes
+- Documentation updates
+- Cosmetic changes
+
+### Version History
+
+**Storage:**
+```solidity
+struct Version {
+  uint8 major;
+  uint8 minor;
+  uint8 patch;
+}
+
+App.versionHistory: Version[] // [1.0.0, 1.5.0, 2.0.0]
+```
+
+**Querying:**
+```typescript
+// Get app by DID + major version
+const app = await registry.getApp("did:web:example.com", 2);  // Major version = 2
+
+// Version history includes all minor/patch updates
+app.versionHistory // [2.0.0, 2.0.1, 2.1.0]
+```
+
+### Events for Historical Tracking
+
+```solidity
+event VersionAdded(
+  bytes32 indexed didHash,
+  uint8 indexed major,
+  uint256 indexed tokenId,
+  uint8 minor,
+  uint8 patch
+);
+
+event MetadataSet(
+  string indexed did,
+  uint8 major,
+  uint8 minor,
+  uint8 patch,
+  bytes32 dataHash,
+  uint256 timestamp
+);
+```
+
+**Use events to:**
+- Reconstruct version timeline
+- Audit metadata changes
+- Track update frequency
+
+## Trait-Based Discovery
+
+### What are Traits?
+
+Traits are **searchable tags** stored as keccak256 hashes:
+
+```typescript
+traits: ["gaming", "social", "api:mcp", "pay:x402"]
+  ↓ (hashed on-chain)
+traitHashes: [
+  0xabc123..., // keccak256("gaming")
+  0xdef456..., // keccak256("social")
+  ...
+]
+```
+
+### Trait Categories
+
+**API Types:**
+- `api:openapi`, `api:graphql`, `api:jsonrpc`, `api:mcp`, `api:a2a`
+
+**Payment:**
+- `pay:x402` - Supports x402 micropayments
+
+**Developer-Defined:**
+- `gaming`, `social`, `defi`, `nft`, `metaverse`, `ai`, `enterprise`
+
+You can define any trait you want.  OMA3 will add more suggested traits to the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification.md) in the future.
+
+### Searching by Traits
+
+**Current:** Client-side filtering (requires fetching all apps)
+
+```typescript
+// Get all active apps
+const allApps = await listActiveApps(0, 100);
+
+// Filter by trait client-side
+const mcpServers = [];
+for (const app of allApps.items) {
+  const traitHash = ethers.id("api:mcp");
+  const hasTrait = await registry.hasAnyTraits(app.did, app.versionMajor, [traitHash]);
+  if (hasTrait) {
+    mcpServers.push(app);
+  }
+}
+```
+
+**Future:** Indexer will enable efficient trait search
+
+```typescript
+// With indexer (coming soon)
+const mcpServers = await indexer.query({
+  traits: ["api:mcp"],
+  interfaces: 2 // API interface
+});
+```
+
+## Artifact Verification (Binary Downloads)
+
+### What are Artifacts?
+
+For downloadable binaries, artifacts provide supply-chain security similar to Apple notarization or Windows Authenticode.
+
+### Structure
+
+**In platforms:**
+```json
+{
+  "platforms": {
+    "macos": {
+      "downloadUrl": "https://example.com/app.dmg",
+      "artifactDid": "did:artifact:bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+    }
+  }
+}
+```
+
+**In artifacts map:**
+```json
+{
+  "artifacts": {
+    "did:artifact:bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi": {
+      "type": "binary",
+      "os": "macos",
+      "architecture": "arm64",
+    }
+  }
+}
+```
+
+### Artifact DID Format
+
+`did:artifact:<cidv1>` - CIDv1 base32 hash of artifact bytes
+
+**Why CIDv1?**
+- Content-addressed (hash = identifier)
+- IPFS compatible
+- Self-verifying
+
+### Verification Flow
+
+```typescript
+// 1. Client fetches download URL
+const binary = await fetch(platforms.macos.downloadUrl);
+
+// 2. Compute hash
+const hash = sha256(binary);
+
+// 3. Extract expected hash from artifact DID
+const artifactDid = platforms.macos.artifactDid;
+const expectedHash = extractHashFromDid(artifactDid);
+
+// 4. Verify
+if (hash === expectedHash) {
+  // ✅ Binary hasn't been tampered with
+  // Safe to install!
+}
+```
+
+## Status Lifecycle
+
+### Status Values
+
+- **0 - Active** - Current, supported version
+- **1 - Deprecated** - Still works but outdated
+- **2 - Replaced** - Superseded by newer version
+
+### Status Management
+
+**Only the minter can update status:**
+
+```typescript
+await registry.updateStatus("did:web:example.com", 1, 1); // Set to deprecated
+```
+
+**Use cases:**
+- Mark old versions as deprecated
+- Sunset discontinued services
+- Signal migrations to new versions
+
+### Discovery Impact
+
+**Public queries** (landing page, search):
+- Only show **Active** apps by default
+- Filter: `getAppsByStatus(0)` 
+
+**Owner queries** (dashboard):
+- Show all statuses
+- Owner can manage deprecated apps
+
+## Next Steps
+
+- **[Registration Guide](./registration-guide.md)** - Register your first service
+- **[Cookbooks](./cookbooks/register-website.md)** - Specific examples
+- **[Attestations](./attestations.md)** - Build trust through verification
+- **[Client Integration](./client-guide.md)** - Query the registry
+
+---
+
+**Ready to tokenize your service?** Head to [registry.omatrust.org](https://registry.omatrust.org) to get started.

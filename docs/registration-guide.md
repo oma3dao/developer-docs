@@ -1,280 +1,395 @@
 ---
 id: registration-guide
 title: Registration Guide
-sidebar_position: 4
+sidebar_position: 5
 ---
 
-# App Registration Guide
+# Service Registration Guide
 
-This guide walks you through the process of registering your application with the OMA3 App Registry. By tokenizing your application, you'll make it discoverable and launchable across the open metaverse ecosystem.
+:::caution Draft Documentation
+Registration process and UI may change. Screenshots and specific steps may differ from current implementation. For the most accurate walkthrough, use the wizard at [registry.omatrust.org](https://registry.omatrust.org).
+:::
 
-## Wallet Setup
+This guide walks you through registering your service (website, API, smart contract, or AI agent) with the OMATrust App Registry.
 
-Before registering your app, you'll need to set up a blockchain wallet that supports the networks where the App Registry is deployed.
+## Prerequisites
 
-We've tested extensively with MetaMask Mobile, but any wallet that allows entering custom chain information should work fine. Future documentation will include more specific wallet recommendations.
+### 1. Wallet Setup
 
-### Testnet Configuration
+You'll need a Web3 wallet that supports custom networks:
 
-For development and testing we plan to deploy on multiple testnets but for now the only one we support is the Celo Alfajores testnet:
+**Recommended Wallets:**
+- MetaMask (browser extension or mobile)
+- Coinbase Wallet
+- WalletConnect-compatible wallets
 
-1. **Add Alfajores Testnet**:
-   - Network Name: `Celo Alfajores Testnet`
-   - RPC URL: `https://alfajores-forno.celo-testnet.org`
-   - Chain ID: `44787`
-   - Currency Symbol: `CELO`
-   - Block Explorer: `https://alfajores.celoscan.io`
+**Or use social login:**
+- Google, Apple, Facebook (via Thirdweb embedded wallets)
+- Email + passkey
 
-2. **Get Testnet Tokens**:
-   - Visit the [Alfajores Faucet](https://faucet.celo.org/alfajores)
-   - Connect your wallet or paste your wallet address
-   - Request test CELO tokens (you can get more by signing in with GitHub)
+### 2. Network Configuration
 
-## How the Registry Handles Wallet Identities
+**For Testnet (Development):**
 
-The App Registry smart contract has important security features that determine how wallets interact with application tokens:
+Add OMAchain Testnet to your wallet:
+- **Network Name:** OMAchain Testnet
+- **RPC URL:** https://rpc.testnet.chain.oma3.org/
+- **Chain ID:** 66238
+- **Currency Symbol:** OMA
+- **Explorer:** https://explorer.testnet.chain.oma3.org/
 
-### Ownership Model
+**Get Test Tokens:**
+- Visit [https://faucet.testnet.chain.oma3.org/](https://faucet.testnet.chain.oma3.org/)
+- Request OMA tokens (free for testing)
 
-- **Soulbound Tokens**: App tokens are "soulbound" to the wallet address that registered them
-- **Non-transferable**: App tokens cannot be transferred to other wallets (unlike standard NFTs).  This may change in the future and we certainly anticipate other ERC721 contracts will be deployed without this restriction.
-- **Metadata Authority**: Only the original minter can update app metadata
+### 3. Decide What to Register
 
-### Wallet Verification
+Determine your service type:
 
-- The smart contract uses `msg.sender` to verify the identity of the wallet interacting with the app token
-- All app token operations (minting, metadata updates, status changes) require a valid signature from the owner wallet
-- There is no recovery mechanism if wallet access is lost, so secure your wallet credentials
+| Service Type | Interface | DID Type | Key Features |
+|--------------|-----------|----------|--------------|
+| Website/Web App | Human | did:web | Domain verification, screenshots |
+| API Service | API | did:web | Endpoint, schema, API type |
+| MCP Server | API | did:web | MCP config, tools, resources |
+| A2A Agent | API | did:web | Agent card URL |
+| Smart Contract | Contract | did:pkh | Chain + address in DID |
+| Downloadable App | Human | did:web | Platform binaries, artifacts |
 
 ## Registration Process
 
-### Step 1: Decide Your Hosting Strategy
+### Step 1: Connect Wallet
 
-The first and most important decision is whether you'll self-host your application's Data URL and Portal URI endpoints or use OMA3-provided infrastructure.
+1. Go to [https://registry.omatrust.org](https://registry.omatrust.org)
+2. Click **"Get Started"**
+3. Choose connection method:
+   - MetaMask or other wallet
+   - Social login (Google, Apple, email)
+4. Approve connection
 
-#### Self-Hosting
+You'll be redirected to the dashboard.
 
-Self-hosting your endpoints provides:
-- **Enhanced Security**: Full control over your infrastructure security
-- **Reliability**: No dependency on third-party hosting services
-- **Complete Control**: Update your metadata whenever needed
-- **Custom Implementation**: Build advanced features into your endpoints
+### Step 2: Open Registration Wizard
 
-To self-host:
-- Set up endpoints on your web server that implement the required API formats
-- Ensure your servers have high availability
-- Implement proper security measures (HTTPS, rate limiting, validation)
+Click **"Register New App"** button
 
-#### Default Hosting
+The wizard opens with 6-8 steps (depending on selected interfaces).
 
-Using OMA3's default hosting provides:
-- **Simplified Setup**: No need to create your own endpoints
-- **Managed Service**: Infrastructure maintained by OMA3
-- **Basic Features**: Supports standard metadata fields
-- **Trade-offs**: Less control over updates and features
+### Step 3: Verification & Interface Selection
 
-### Step 2: Plan Your Registration
+**Required Fields:**
+- **App Name** - Display name (e.g., "My API Service")
+- **Version** - Semantic version (e.g., "1.0.0" or "1.0")
+- **DID Type** - Choose did:web or did:pkh
+- **DID** - Your identifier
+  - did:web: `did:web:example.com` (domain-based)
+  - did:pkh: `did:pkh:eip155:1:0xContractAddress` (blockchain-based)
 
-Before starting the registration process, gather the necessary information based on your hosting strategy.
+**Interface Selection:**
+- ☑ **Human** - For websites, apps with GUI
+- ☑ **API** - For programmatic services
+  - If checked: Select API type (OpenAPI, GraphQL, MCP, A2A, JSON-RPC)
+- ☑ **Smart Contract** - For on-chain applications
 
-#### For All Applications (Required Fields)
+**DID Verification:**
+- Click "Verify DID Ownership"
+- For did:web: Server checks `.well-known/did.json`
+- For did:pkh: Server verifies contract ownership
+- Attestation issued automatically
+- Wait for "✅ Verified" status
 
-| Field | Requirements | Example |
-|-------|--------------|---------|
-| App Name | Up to 32 bytes | "Metaverse Explorer" |
-| Version | Format x.y.z | "1.0.0" |
-| DID | Decentralized Identifier | `did:web:myapp.example.com` |
-| IWPS Portal URI | Endpoint for app launching | `https://app.example.com/iwps/portal` |
-| Data URL | Metadata endpoint | `https://metadata.example.com/app/123` |
+### Step 4: On-Chain Data
 
-#### For All Applications (Optional Fields)
+**Data URL:**
+- Auto-generated: `https://registry.omatrust.org/api/data-url/{did}/v/{version}`
+- Or customize to host your own
 
-| Field | Requirements | Example |
-|-------|--------------|---------|
-| Agent API URI | For agent integrations | `https://api.example.com/agent` |
-| Contract Address | CAIP-2 address for blockchain-based games | `eip155:1:0x123...789` |
+**Optional Fields:**
+- **Contract ID** - CAIP-10 address (e.g., `eip155:1:0x123...`)
+- **Fungible Token ID** - CAIP-19 token (e.g., `eip155:1/erc20:0x123...`)
+- **Traits** - Searchable tags (suggestions provided based on interface type)
 
-#### For Default Hosting (Additional Metadata)
+**Traits auto-added:**
+- API type: `api:mcp`, `api:rest`, etc.
+- Add more: `gaming`, `defi`, `pay:x402`, etc.
 
-If you're using OMA3's default hosting, you'll also need to provide these metadata fields directly during registration:
+### Step 5: Common Metadata
 
-| Metadata Field | Description | Example |
-|----------------|-------------|---------|
-| Description URL | URL to a plain text file (e.g.- .txt) that contains a brief app description | "An immersive metaverse exploration app" |
-| Icon URL | URL to app icon (PNG/JPG) with max resolution of 1024x1024| See hosting options below |
-| Screenshots | URLs to app screenshots (up to 5) with max resolution of 2048x2048| See hosting options below |
-| Marketing URL | Link to your app's website | `https://www.example.com` |
-| Token Contract Address | [CAIP-2](https://chainagnostic.org/CAIPs/caip-2) address of your token contract (separate from application's smart contract) | `eip155:1:0x123...789` |
-| Platform URLs | Links to download and launch your app on different platforms | `https://apps.apple.com/app/id123456789` |
+**Required:**
+- **Description** - Concise description (markdown supported)
+- **Image** (if Human) - App icon URL (1024x1024 recommended)
+- **Publisher** (if API/Contract) - Organization name
 
-For hosting app icons and screenshots, see the [Metadata Hosting Options](#metadata-hosting-options) section below.
+**Optional:**
+- **Summary** - Short tagline (80 chars max)
+- **External URL** - Marketing/homepage
+- **Legal URL** - Terms, privacy policy
+- **Support URL** - Help/documentation
 
-### Step 3: Register Your App
+### Step 6: Interface-Specific Fields
 
-1. Visit [appregistry.oma3.org](https://appregistry.oma3.org)
-2. Connect your wallet (ensure you're on the correct network)
-3. Click **Register App** to open the registration form
-4. Fill in the fields and submit
-4. Your wallet will prompt you to sign the transaction
-5. Pay the required gas fee
-6. Wait for transaction confirmation
-7. If you are choosing default URLs and OMA3 hosting, continue to other steps.  At step 5 you will be asked to sign another transaction.
+#### If Human Interface Selected:
 
-Here is a more detailed description of each field
+**Step 6a: Media & Assets**
+- **Screenshots** (required) - At least 1, up to 5
+- **Video URLs** (optional) - Demos, trailers (up to 3)
+- **3D Assets** (optional) - GLB, USDZ files for AR/VR (up to 3)
 
-#### Name and Version
+**Step 6b: Platform Distribution**
+- **IWPS Portal URL** (optional) - Metaverse integration
+- **Platforms** - Configure for each platform:
+  - Web, iOS, Android, Windows, macOS, etc.
+  - Download URL (for native apps)
+  - Launch URL (for web apps)
+  - Artifact verification (appears when download URL provided):
+    - Artifact DID (content hash)
+    - Architecture (x64 or ARM64)
+    - Auto-detects: Type (binary) and OS
 
-Enter your application name (max 32 bytes) and version number in `x.y.z` format.
+#### If API Interface Selected:
 
-#### Decentralized Identifier (DID)
+**Step 7: API Configuration**
+- **Endpoint URL** (required) - Adapts based on API type:
+  - MCP: "MCP Server URL"
+  - A2A: "Agent Card URL"
+  - GraphQL: "GraphQL Endpoint URL"
+  - OpenAPI: "API Endpoint URL"
+- **Schema URL** (optional) - Machine-readable schema preferred:
+  - OpenAPI: Link to `openapi.json`
+  - GraphQL: Link to SDL or introspection endpoint
+  - A2A: Link to agent capabilities
+- **Interface Versions** (optional) - Supported versions (e.g., "v1, v2")
 
-Your DID creates a verifiable link between your app and its identity. Choose a DID method:
+**If MCP Selected:**
+- **MCP Configuration** - Configure tools, resources, prompts:
+  - Tools: Functions your MCP server provides
+  - Resources: Data sources agents can access
+  - Prompts: Pre-configured prompts
+  - Transport & Authentication: Advanced settings
 
-- **did:web**: Link to your domain (e.g., `did:web:myapp.example.com`)
-- **did:eth**: Link to your Ethereum address (e.g., `did:eth:0x123...789`)
-- **did:key**: Use a public key without external dependencies
+#### If Smart Contract Only:
 
-For `did:web`, ensure you publish a DID document at `https://<domain>/.well-known/did.json`.
+**Step 7: Contract Endpoint (Optional)**
+- **RPC Endpoint** - Recommend specific RPC for performance
+- **Schema URL** - Link to ABI JSON or block explorer
 
-#### IWPS Portal URI
+### Step 8: Review & Mint
 
-This is the endpoint that will be called when a user launches your app from a compatible store. This URI must:
+**Review all information:**
+- Identifiers (DID, version, interfaces)
+- Metadata fields
+- Generated JSON preview
+- Calculated dataHash
 
-- Be publicly accessible
-- Implement the IWPS Query API
-- Handle the parameters defined in the IWPS specification
-
-#### Data URL
-
-This endpoint provides extended metadata about your app:
-
-- Must return a JSON response with the correct format. See the [Example DataURL Response](#example-dataurl-response) below.
-- Should include app description, icons, screenshots, etc.
-- Should be hosted on a reliable service
-
-#### Optional Fields
-
-- **Agent API URI**: For future agent-based interactions (can be left blank)
-- **Contract Address**: If your app has an associated smart contract (e.g.- blockchain based games), in CAIP-2 format
-
-### Example DataURL Response
-
-Your DataURL endpoint should return a JSON response similar to this:
-
+**Copy JSON (if using custom dataUrl):**
 ```json
 {
-  "descriptionUrl": "https://spatialstore.myworld.com/dataurl/description.txt",
-  "iwpsUrl": "https://spatialstore.myworld.com/dataurl/iwps-url",
-  "agentUrl": "https://spatialstore.myworld.com/dataurl/agent-url",
-  "image": "https://spatialstore.myworld.com/dataurl/appicon.png",
-  "screenshotUrls": [
-    "https://spatialstore.myworld.com/dataurl/screenshot1.png",
-    "https://spatialstore.myworld.com/dataurl/screenshot2.png"
-  ],
-  "external_url": "https://spatialstore.myworld.com/",
-  "token": "eip155:1:0x1234567890abcdef",
-  "platforms": {
-    "web": {
-      "url_launch": "https://spatialstore.myworld.com/play"
-    },
-    "ios": {
-      "url_download": "https://apps.apple.com/app/id123456789",
-      "url_launch": "https://spatialstore.myworld.com/play", 
-      "supported": ["iPhone", "iPad", "VisionPro"]
-    },
-    "android": {
-      "url_download": "https://play.google.com/store/apps/details?id=com.myworld.spatialstore", 
-      "url_launch": "https://spatialstore.myworld.com/play" 
-    }
-  }  
+  "name": "My Service",
+  "description": "...",
+  // ... all metadata
 }
 ```
 
-## Metadata Hosting Options
+Host this JSON at your custom dataUrl endpoint.
 
-### Self-Hosted Options
+**Click "Submit":**
+- Single transaction mints registry NFT
+- Metadata stored (if using default dataUrl)
+- Attestations already issued (from Step 3)
+- Done! Your service is now registered
 
-You can host metadata on:
-- Your own web server (ensure high uptime)
-- Cloud services like AWS S3 or Google Cloud Storage
-- IPFS via Pinata or nft.storage (for decentralized hosting)
+## After Registration
 
-### Security Considerations
+### View Your Service
 
-When hosting your metadata and implementing IWPS endpoints:
+**On Dashboard:**
+- See your registered service
+- App card shows:
+  - Name (from metadata)
+  - Version
+  - Interface badges (Human, API, Contract)
+  - Status (Active by default)
 
-- **HTTPS Required**: All endpoints must use HTTPS
-- **CORS Headers**: Set appropriate CORS headers for cross-domain access
-- **Rate Limiting**: Implement rate limiting to prevent abuse
-- **Input Validation**: Validate all input parameters
-- **Monitoring**: Set up monitoring for your endpoints
+**Click to view details:**
+- Full metadata
+- Data integrity status (✅ verified or ❌ mismatch)
+- Attestation status (🛡️ if oracle verified)
+- All fields displayed
 
-### Cloudinary
+### Update Metadata
 
-We have had success with [Cloudinary](https://cloudinary.com/) although the setup isn't straight forward:
-- Free tier with generous limits
-- Image optimization and transformation
-- Global CDN for fast loading
-- Reliability and uptime
+**For default dataUrl:**
+1. Click "Edit" on your app card
+2. Update fields in wizard
+3. Submit update transaction
+4. New metadata stored on-chain
+5. Version history updated
 
-Here's a [Cloudinary Guide](./cloudinary-guide):
+**For custom dataUrl:**
+1. Update JSON at your endpoint
+2. Compute new hash: `keccak256(jsonString)`
+3. Call `setMetadataJson()` with new hash
+4. Or use wizard "Edit" and it handles hashing
 
-By default, Cloudinary generates a random `public_id` (e.g. `v16839038/k3jhsdf8321`), but you can override this to make URLs easier to reference in metadata.
+### Change Status
 
-#### Example Structure
+**Mark as deprecated:**
+1. Open app details
+2. Click "Change Status"
+3. Select "Deprecated"
+4. Approve transaction
+5. App marked deprecated (still visible to you, hidden from public)
 
-Use a format like: 
+### Transfer Ownership
 
-`apps/your-app-slug/filename`
+**Transfer NFT to new wallet:**
+```typescript
+await registry.transferFrom(yourAddress, newOwnerAddress, tokenId);
+```
 
-Examples:
-- `apps/mycoolapp/icon`
-- `apps/mycoolapp/screenshot-1`
-- `apps/mycoolapp/screenshot-2`
-
-This creates image URLs like:
-
-`https://res.cloudinary.com/your-cloud-name/image/upload/apps/mycoolapp/icon.png`
-
-
-1. Go to [Cloudinary Media Library](https://console.cloudinary.com/)
-2. Click "Upload"
-3. Choose your image
-4. Under "Public ID", enter: `apps/mycoolapp/icon`
-5. Click "Advanced" if needed to disable automatic unique suffixes
-
-Once uploaded, your image will be available at:
-
-`https://res.cloudinary.com/your-cloud-name/image/upload/apps/mycoolapp/icon.png`
-
-Replace `your-cloud-name` with your actual Cloudinary account name.
-
-## Future Roadmap
-
-The App Registry is evolving so be aware of these coming changes while we're on testnet:
-
-- **Metadata Contract Migration**: Moving fields between the app registry and app metadata contracts
-- **ERC721 Extension**: Proposing a formal standard for tokenized applications
-- **Custom Registries**: Support for developer-deployed registry instances
+New owner can now update metadata and status.
 
 ## Troubleshooting
 
-### Common Issues
+### "DID Verification Failed"
 
-| Problem | Solution |
-|---------|----------|
-| Transaction fails | Ensure you have enough gas (native token) in your wallet |
-| DID already exists | Each DID must be unique; choose a different identifier |
-| Metadata not appearing | Verify your DataURL is accessible and returns valid JSON |
-| Portal URI unreachable | Check that your IWPS endpoint is publicly accessible |
+**Causes:**
+- did:web: DID document not found at `/.well-known/did.json`
+- did:web: Wallet address not in DID document
+- did:pkh: Contract owner doesn't match wallet
 
-### Support Resources
+**Solutions:**
+- Verify DID document is accessible
+- Check wallet address is correct
+- For contracts: ensure you're the owner/admin
 
-- [GitHub Issues](https://github.com/oma3dao/developer-docs-alt/issues) - Technical issues and bug reports
-- [Documentation Repository](https://github.com/oma3dao/developer-docs-alt) - Latest documentation updates
+### "Transaction Failed"
 
-## Learn More
+**Common causes:**
+- Insufficient gas
+- DID already registered for this major version
+- Validation errors (check all required fields)
 
-- [Join OMA3](https://www.oma3.org/join)
-- [OMA3 Intellectual Property Rights Policy](https://www.oma3.org/intellectual-property-rights-policy)
-- [IWPS Specification](https://github.com/oma3dao/iwps-specification)
+**Solutions:**
+- Get more OMA tokens from faucet (testnet)
+- Check if app already exists: different major version needed
+- Review error message for specific field issues
+
+### "Data Hash Mismatch"
+
+**Causes:**
+- Metadata at dataUrl changed since registration
+- Hash computed with different algorithm
+
+**Solutions:**
+- Re-calculate hash from current JSON
+- Update dataHash via `setMetadataJson()`
+- Or keep metadata unchanged
+
+### "Attestation Not Found"
+
+**Causes:**
+- Oracle hasn't processed verification yet
+- Maturation period hasn't passed (60 seconds)
+- DID verification failed
+
+**Solutions:**
+- Wait 1-2 minutes and check again
+- Re-run verification
+- Check resolver logs
+
+## Advanced Topics
+
+### Custom DataUrl Hosting
+
+**Requirements:**
+- HTTPS endpoint
+- Returns valid JSON
+- High availability recommended
+- CORS enabled for browser access
+
+**Example endpoint (Express.js):**
+```javascript
+app.get('/metadata/:did/v/:version', (req, res) => {
+  const metadata = {
+    name: "My Service",
+    description: "...",
+    // ... all fields
+  };
+  
+  res.json(metadata);
+});
+```
+
+**Benefits:**
+- Full control over metadata
+- Update anytime without transactions
+- Can add custom fields
+
+**Trade-offs:**
+- Must maintain infrastructure
+- Availability is your responsibility
+
+### Batch Registration
+
+**For multiple services:**
+```typescript
+const services = [
+  { did: "did:web:api1.example.com", ... },
+  { did: "did:web:api2.example.com", ... },
+  { did: "did:web:api3.example.com", ... },
+];
+
+for (const service of services) {
+  await registry.mint(...service);
+  await sleep(1000); // Rate limit
+}
+```
+
+**Or use hardhat tasks:**
+```bash
+npx hardhat mint \
+  --did "did:web:api.example.com" \
+  --interfaces 2 \
+  --dataurl "https://api.example.com/metadata" \
+  --network omachainTestnet
+```
+
+### Programmatic Registration
+
+**Using Thirdweb SDK:**
+```typescript
+import { prepareContractCall, sendTransaction } from 'thirdweb';
+import { privateKeyToAccount } from 'thirdweb/wallets';
+
+const registry = getContract({ address: registryAddress, abi });
+const account = privateKeyToAccount({ privateKey });
+
+const tx = prepareContractCall({
+  contract: registry,
+  method: 'mint',
+  params: [
+    did,
+    interfaces,
+    dataUrl,
+    dataHash,
+    dataHashAlgorithm,
+    fungibleTokenId,
+    contractId,
+    major, minor, patch,
+    traitHashes,
+    metadataJson
+  ]
+});
+
+const result = await sendTransaction({ transaction: tx, account });
+```
+
+## Next Steps
+
+- **[Cookbooks](./cookbooks/register-website.md)** - Specific examples for your use case
+- **[Client Integration](./client-guide.md)** - Query registered services
+- **[Attestations](./attestations.md)** - Build trust through verification
+
+---
+
+**Ready to register?** Head to [registry.omatrust.org](https://registry.omatrust.org) and click "Get Started"!
