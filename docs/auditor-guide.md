@@ -679,7 +679,7 @@ async function documentVerification(did: string, result: any) {
 
 **Maintaining good standing:**
 - Respond to disputes within 48 hours
-- Maintain <1% false positive rate
+- Maintain less than 1% false positive rate
 - Keep attestations current (renew before expiry)
 - Participate in governance discussions
 - Transparent operations
