@@ -290,17 +290,44 @@ traitHashes: [
 
 You can define any trait you want.  OMA3 will add more suggested traits to the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification.md) in the future.
 
-### Searching by Traits
+### Searching by Interface
 
-**Current:** Client-side filtering (requires fetching all apps)
+**Use `getAppsByInterface()` for efficient filtering:**
 
 ```typescript
-// Get all active apps
-const allApps = await listActiveApps(0, 100);
+// Get all APIs
+const result = await readContract({
+  contract: registry,
+  method: 'function getAppsByInterface(uint16, uint256) view returns (...)',
+  params: [2, 0] // interfaceMask=2 (API), startIndex=0
+});
 
-// Filter by trait client-side
+const apiApps = result[0]; // Array of apps with API interface
+
+// Get Human OR API apps
+const result2 = await registry.getAppsByInterface(3, 0); // 3 = 1|2 (Human OR API)
+```
+
+**Interface masks:**
+- `1` - Human only
+- `2` - API only
+- `3` - Human OR API
+- `4` - Contract only
+- `5` - Human OR Contract
+- `6` - API OR Contract
+- `7` - Any combination (all)
+
+### Searching by Traits
+
+**Current:** Requires fetching and checking each app
+
+```typescript
+// Get apps of specific type first (efficient)
+const apiApps = await registry.getAppsByInterface(2, 0);
+
+// Then filter by trait client-side
 const mcpServers = [];
-for (const app of allApps.items) {
+for (const app of apiApps[0]) {
   const traitHash = ethers.id("api:mcp");
   const hasTrait = await registry.hasAnyTraits(app.did, app.versionMajor, [traitHash]);
   if (hasTrait) {
@@ -309,13 +336,14 @@ for (const app of allApps.items) {
 }
 ```
 
-**Future:** Indexer will enable efficient trait search
+**Future:** Indexer will enable efficient multi-field search
 
 ```typescript
-// With indexer (coming soon)
+// With indexer (Shinzo, coming soon)
 const mcpServers = await indexer.query({
   traits: ["api:mcp"],
-  interfaces: 2 // API interface
+  interfaces: 2,
+  status: 0
 });
 ```
 

@@ -40,7 +40,15 @@ function mint(
 - **Interface bitmap** - Supports Human (1), API (2), Contract (4) combinations
 - **Version tracking** - Major.minor.patch with on-chain history
 - **Status management** - Active, Deprecated, Replaced
-- **Trait-based search** - Hash-based tagging for discoverability
+- **Trait-based tagging** - Hash-based tags for indexer discoverability
+
+**Query Functions:**
+- `getAppsByStatus()` - Filter by status (Active, Deprecated, Replaced)
+- `getAppsByOwner()` - Get user's apps
+- `getAppsByInterface()` - Filter by interface type(s) - **On-chain search**
+- `hasAnyTraits()`, `hasAllTraits()` - Check individual app traits
+
+**Note:** Trait search requires client-side filtering or indexer (Shinzo). Interface search is on-chain due to finite values (1-7) vs unlimited trait possibilities.
 
 ### 2. Metadata Contract
 

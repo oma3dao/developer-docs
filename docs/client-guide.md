@@ -637,16 +637,37 @@ export function TrustBadge({ did }: { did: string }) {
 
 ### Filter by Interface
 
+**Use on-chain filtering:**
+
+```typescript
+async function getAppsByInterface(interfaceType: 'human' | 'api' | 'contract' | 'all') {
+  const interfaceMask = 
+    interfaceType === 'human' ? 1 :
+    interfaceType === 'api' ? 2 :
+    interfaceType === 'contract' ? 4 :
+    7; // all
+  
+  const result = await readContract({
+    contract: registry,
+    method: 'function getAppsByInterface(uint16, uint256) view returns (App[], uint256)',
+    params: [interfaceMask, 0]
+  });
+  
+  return result[0]; // Array of matching apps
+}
+
+// Example
+const apiApps = await getAppsByInterface('api');
+const humanOrApiApps = await getAppsByInterface('human' | 'api'); // Use mask 3
+```
+
+**Or client-side filtering:**
+
 ```typescript
 function filterByInterface(apps: App[], interfaceType: 'human' | 'api' | 'contract') {
   const bit = interfaceType === 'human' ? 1 : interfaceType === 'api' ? 2 : 4;
   return apps.filter(app => app.interfaces & bit);
 }
-
-// Example
-const allApps = await listActiveServices();
-const humanApps = filterByInterface(allApps.apps, 'human');
-const apiServices = filterByInterface(allApps.apps, 'api');
 ```
 
 ### Sort by Trust Score
