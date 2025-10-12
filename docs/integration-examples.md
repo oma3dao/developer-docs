@@ -520,10 +520,10 @@ contract OMATrustOracle {
 
 ## Next.js API Routes
 
-### Verify DID Endpoint
+### Verify and Attest Endpoint
 
 ```typescript
-// pages/api/verify-did.ts
+// pages/api/verify-and-attest.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
 
@@ -532,10 +532,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { did, connectedAddress } = req.body;
+  const { did, connectedAddress, requiredSchemas = ['oma3.ownership.v1'] } = req.body;
   
   try {
-    // 1. Verify DID ownership
+    // 1. Check for existing attestations (fast path)
+    const existing = await checkExistingAttestations(did, connectedAddress, requiredSchemas);
+    
+    if (existing.missing.length === 0) {
+      return res.json({
+        ok: true,
+        status: 'ready',
+        attestations: { present: existing.present, missing: [] },
+        message: 'All attestations already exist'
+      });
+    }
+    
+    // 2. Verify DID ownership
     let verified = false;
     
     if (did.startsWith('did:web:')) {
@@ -547,32 +559,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     if (!verified) {
-      return res.status(403).json({ error: 'DID ownership verification failed' });
+      return res.status(403).json({ 
+        ok: false,
+        status: 'failed',
+        error: 'DID ownership verification failed' 
+      });
     }
     
-    // 2. Issue attestation
-    const resolver = getResolverContract();
-    const didHash = ethers.id(did);
-    const controllerAddress = ethers.zeroPadValue(connectedAddress, 32);
-    const expiresAt = Math.floor(Date.now() / 1000) + 31536000; // 1 year
-    
-    const tx = await resolver.upsertDirect(didHash, controllerAddress, expiresAt);
-    await tx.wait();
+    // 3. Write missing attestations
+    const txHashes = [];
+    for (const schema of existing.missing) {
+      const txHash = await writeAttestation(did, connectedAddress, schema);
+      txHashes.push(txHash);
+    }
     
     return res.json({
-      verified: true,
-      txHash: tx.hash,
-      expiresAt
+      ok: true,
+      status: 'ready',
+      attestations: {
+        present: [...existing.present, ...existing.missing],
+        missing: []
+      },
+      txHashes
     });
   } catch (error) {
     console.error('Verification failed:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ 
+      ok: false,
+      status: 'failed',
+      error: error.message 
+    });
   }
+}
+
+async function checkExistingAttestations(did: string, address: string, schemas: string[]) {
+  const resolver = getResolverContract();
+  const didHash = ethers.id(did);
+  
+  const currentOwner = await resolver.currentOwner(didHash);
+  const hasValidOwnership = currentOwner && 
+    currentOwner.toLowerCase() !== '0x0000000000000000000000000000000000000000' &&
+    currentOwner.toLowerCase() === address.toLowerCase();
+  
+  return {
+    present: hasValidOwnership ? schemas : [],
+    missing: hasValidOwnership ? [] : schemas
+  };
 }
 
 async function verifyDidWeb(did: string, claimedOwner: string): Promise<boolean> {
   const domain = did.replace('did:web:', '');
   
+  // Try DNS TXT first (fast)
+  const dnsVerified = await checkDnsTxt(domain, claimedOwner);
+  if (dnsVerified) return true;
+  
+  // Fallback to DID document
   try {
     const didDoc = await fetch(`https://${domain}/.well-known/did.json`)
       .then(r => r.json());
@@ -593,18 +635,47 @@ async function verifyDidPkh(did: string, claimedOwner: string): Promise<boolean>
   const contractAddress = parts[4];
   
   const provider = new ethers.JsonRpcProvider(getRpcForChain(chainId));
-  const contract = new ethers.Contract(
-    contractAddress,
-    ['function owner() view returns (address)'],
-    provider
-  );
   
+  // Try multiple ownership patterns
+  const patterns = [
+    'function owner() view returns (address)',
+    'function admin() view returns (address)',
+    'function getOwner() view returns (address)'
+  ];
+  
+  for (const abi of patterns) {
+    try {
+      const contract = new ethers.Contract(contractAddress, [abi], provider);
+      const owner = await contract[abi.split(' ')[1].replace('()', '')]();
+      if (owner.toLowerCase() === claimedOwner.toLowerCase()) {
+        return true;
+      }
+    } catch {
+      continue;
+    }
+  }
+  
+  // Try EIP-1967 proxy admin slot
   try {
-    const owner = await contract.owner();
-    return owner.toLowerCase() === claimedOwner.toLowerCase();
+    const adminSlot = '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103';
+    const adminValue = await provider.getStorage(contractAddress, adminSlot);
+    const adminAddress = ethers.getAddress('0x' + adminValue.slice(-40));
+    return adminAddress.toLowerCase() === claimedOwner.toLowerCase();
   } catch {
     return false;
   }
+}
+
+async function writeAttestation(did: string, address: string, schema: string): Promise<string> {
+  const resolver = getResolverContract();
+  const didHash = ethers.id(did);
+  const controllerAddress = ethers.zeroPadValue(address, 32);
+  const expiresAt = 0; // Never expires
+  
+  const tx = await resolver.upsertDirect(didHash, controllerAddress, expiresAt);
+  await tx.wait();
+  
+  return tx.hash;
 }
 ```
 

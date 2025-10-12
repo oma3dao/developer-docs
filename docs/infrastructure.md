@@ -262,15 +262,11 @@ Features:
 
 **Endpoints:**
 ```yaml
-POST /api/verify-did
-  Purpose: Verify DID ownership
-  Input: { did, connectedAddress }
-  Output: { verified, txHash }
-
 POST /api/verify-and-attest
-  Purpose: Verify and issue attestations
-  Input: { did, connectedAddress }
-  Output: { verified, attested, txHash }
+  Purpose: Unified verification and attestation (idempotent)
+  Input: { did, connectedAddress, requiredSchemas }
+  Output: { ok, status, attestations, txHashes }
+  Flow: Check existing → Verify if needed → Write attestations → Return status
 
 GET /api/data-url/{versionedDid}
   Purpose: Fetch metadata
@@ -631,8 +627,7 @@ vercel --prod
 
 **Serverless functions:**
 ```
-/api/verify-did - DID ownership verification
-/api/verify-and-attest - Combined verification + attestation
+/api/verify-and-attest - Unified verification + attestation (idempotent)
 /api/data-url/[...versionedDid] - Metadata proxy
 /api/validate-url - URL validation helper
 ```

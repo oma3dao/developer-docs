@@ -183,20 +183,22 @@ Blockchain events provide history:
 **For did:web:**
 ```
 1. User registers: did:web:example.com
-2. Frontend calls: POST /api/verify-did
-3. Server fetches: https://example.com/.well-known/did.json
-4. Validates: wallet address in DID document
-5. Issues attestation to resolver
-6. User can now mint app NFT
+2. Frontend calls: POST /api/verify-and-attest
+3. Server checks for existing attestations (fast path)
+4. If missing: fetches https://example.com/.well-known/did.json
+5. Validates: wallet address in DID document
+6. Issues attestation to resolver
+7. User can now mint app NFT
 ```
 
 **For did:pkh:**
 ```
 1. User registers: did:pkh:eip155:1:0xContractAddress
-2. Frontend calls: POST /api/verify-did
-3. Server checks: contract owner matches connected wallet
-4. Issues attestation
-5. User can mint
+2. Frontend calls: POST /api/verify-and-attest
+3. Server checks for existing attestations (fast path)
+4. If missing: checks contract owner matches connected wallet
+5. Issues attestation
+6. User can mint
 ```
 
 ### DataHash Verification
@@ -331,24 +333,17 @@ Resolver:  0x7946127D2f517c8584FdBF801b82F54436EC6FC7
 
 ### API Endpoints
 
-**Verify DID ownership:**
+**Verify and attest (unified endpoint):**
 ```
-POST /api/verify-did
-Body: { did, connectedAddress }
-Returns: { verified, txHash }
+POST /api/verify-and-attest
+Body: { did, connectedAddress, requiredSchemas }
+Returns: { ok, status, attestations, txHashes }
 ```
 
 **Fetch metadata:**
 ```
 GET /api/data-url/{versionedDid}
 Returns: JSON metadata
-```
-
-**Verify and attest:**
-```
-POST /api/verify-and-attest
-Body: { did, connectedAddress }
-Returns: { verified, attested, txHash }
 ```
 
 ### Smart Contract Integration

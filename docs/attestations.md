@@ -468,44 +468,31 @@ Potential monetization for issuers:
 
 ### Frontend Verification
 
-**Verify DID ownership:**
-```typescript
-POST /api/verify-did
-Content-Type: application/json
-
-{
-  "did": "did:web:example.com",
-  "connectedAddress": "0x123..."
-}
-
-Response:
-{
-  "verified": true,
-  "attestation": {
-    "txHash": "0xabc...",
-    "timestamp": 1735689600
-  }
-}
-```
-
-**Verify and attest (combined):**
+**Verify and attest (unified endpoint):**
 ```typescript
 POST /api/verify-and-attest
 Content-Type: application/json
 
 {
   "did": "did:web:example.com",
-  "connectedAddress": "0x123..."
+  "connectedAddress": "0x123...",
+  "requiredSchemas": ["oma3.ownership.v1"]
 }
 
 Response:
 {
-  "verified": true,
-  "attested": true,
-  "didVerification": { txHash: "0x..." },
-  "dataHashAttestation": { txHash: "0x..." }
+  "ok": true,
+  "status": "ready",
+  "attestations": {
+    "present": ["oma3.ownership.v1"],
+    "missing": []
+  },
+  "txHashes": ["0xabc..."],
+  "elapsed": "1234ms"
 }
 ```
+
+This endpoint is idempotent - it checks for existing attestations first (fast path), only verifying and writing new attestations if needed.
 
 ### Smart Contract Queries
 
