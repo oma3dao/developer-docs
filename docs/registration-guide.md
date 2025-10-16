@@ -227,8 +227,8 @@ Host this JSON at your custom dataUrl endpoint.
 **For custom dataUrl:**
 1. Update JSON at your endpoint
 2. Compute new hash: `keccak256(jsonString)`
-3. Call `setMetadataJson()` with new hash
-4. Or use wizard "Edit" and it handles hashing
+3. Call `updateAppControlled()` with new dataUrl, hash, and metadata
+4. Or use wizard "Edit" and it handles hashing and version increment
 
 ### Change Status
 
@@ -282,7 +282,7 @@ New owner can now update metadata and status.
 
 **Solutions:**
 - Re-calculate hash from current JSON
-- Update dataHash via `setMetadataJson()`
+- Update dataHash via `updateAppControlled()`
 - Or keep metadata unchanged
 
 ### "Attestation Not Found"

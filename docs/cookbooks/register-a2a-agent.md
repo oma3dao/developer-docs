@@ -824,7 +824,7 @@ async function loggedContactAgent(targetDid: string, message: any) {
 ```
 1. Add capability to agent card
 2. Update metadata version: 1.0.0 → 1.1.0
-3. Use wizard "Edit" or call setMetadataJson
+3. Use wizard "Edit" or call updateAppControlled with metadata
 4. Version history updated automatically
 ```
 

@@ -158,14 +158,20 @@ dataHash: "0xabc123..." (keccak256 of JSON)
 
 ### On-Chain Metadata
 
-**Approach:** Store JSON string via registry contract
+**Approach:** Store JSON string via registry contract during update
 
 ```solidity
-// Call through registry (not metadata contract directly)
-registry.setMetadataJson(did, major, minor, patch, jsonString, hash, algorithm)
+// Update app and store metadata atomically
+registry.updateAppControlled(
+    did, major, 
+    newDataUrl, newDataHash, newDataHashAlgorithm,
+    interfaces, traitHashes,
+    newMinor, newPatch,
+    jsonString  // Metadata stored if provided
+)
 ```
 
-**Note:** The registry contract forwards to the metadata contract. Direct calls to metadata contract are restricted.
+**Note:** Metadata is stored atomically with app updates. The registry forwards to the metadata contract internally.
 
 **Benefits:**
 - ✅ Permanent storage

@@ -288,14 +288,20 @@ async function updateMcpMetadata(newTools: Tool[]) {
   // Compute new hash
   const jsonString = JSON.stringify(updatedMetadata);
   const newHash = ethers.id(jsonString);
+  const newDataUrl = `https://your-domain.com/api/data-url/${did}/v/${major}.${minor}.${patch + 1}`;
   
-  // Update on-chain
-  await registry.setMetadataJson(
+  // Update on-chain (includes metadata atomically)
+  await registry.updateAppControlled(
     did,
-    major, minor, patch + 1, // Increment patch
-    jsonString,
+    major,
+    newDataUrl,
     newHash,
-    0 // keccak256
+    0, // keccak256
+    0, // interfaces (no change)
+    [], // traitHashes (no change)
+    minor,
+    patch + 1, // Increment patch
+    jsonString // Metadata stored atomically
   );
 }
 ```

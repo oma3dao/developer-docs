@@ -38,15 +38,18 @@ function mint(
     string metadataJson
 ) external returns (uint256 tokenId)
 
-// Update metadata
-function setMetadataJson(
+// Update app (now handles metadata atomically)
+function updateAppControlled(
     string did,
     uint8 major,
-    uint8 minor,
-    uint8 patch,
-    string metadataJson,
-    bytes32 dataHash,
-    uint8 dataHashAlgorithm
+    string newDataUrl,
+    bytes32 newDataHash,
+    uint8 newDataHashAlgorithm,
+    uint16 newInterfaces,
+    bytes32[] newTraitHashes,
+    uint8 newMinor,
+    uint8 newPatch,
+    string metadataJson  // Optional: pass empty string if no metadata update
 ) external
 
 // Update status
@@ -175,7 +178,8 @@ mapping(address => bool) private _issuers; // Authorized issuers
     └────┬─────────────┘      └───────────────┘
          │                             ▲
          │                             │
-         └─── setMetadataJson() ───────┘
+         └─ updateAppControlled() ─────┘
+            (with metadata param)
          
          
 ┌──────────────────┐

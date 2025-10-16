@@ -79,8 +79,8 @@ Both can coexist. Mark old versions as "Deprecated" when releasing new major ver
 
 **2. Custom dataUrl (you host):**
 - Update JSON at your endpoint
-- Call `setMetadataJson()` with new hash
-- Version history updated
+- Call `updateAppControlled()` with new hash and metadata
+- Version history updated atomically
 
 ### Can I transfer ownership?
 
