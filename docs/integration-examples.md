@@ -63,7 +63,10 @@ export async function verifyService(did: string, major: number = 1) {
     const metadata = JSON.parse(metadataText);
     
     // 3. Verify data integrity
-    const computedHash = ethers.id(metadataText);
+    // IMPORTANT: JSON must be canonicalized using JCS (RFC 8785) before hashing
+    // Use a JCS library (e.g., canonicalize) for proper implementation
+    const canonicalJson = canonicalize(JSON.parse(metadataText));
+    const computedHash = ethers.id(canonicalJson);
     const dataIntegrityValid = computedHash.toLowerCase() === app.dataHash.toLowerCase();
     
     // 4. Check attestations
@@ -171,6 +174,8 @@ export function ServiceTrustBadge({ did }: { did: string }) {
 }
 ```
 
+**Important:** JSON must be canonicalized using JCS (JSON Canonicalization Scheme, RFC 8785) before hashing for verification to work correctly. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for complete details.
+
 ## Python Examples
 
 ### Service Discovery for AI Agents
@@ -211,11 +216,16 @@ class OMATrustClient:
         return response.json()
     
     def verify_data_integrity(self, data_url: str, expected_hash: str):
-        """Verify metadata hash"""
-        response = requests.get(data_url)
-        json_text = response.text
+        """Verify metadata hash using JCS canonicalization"""
+        import json
+        from canonicaljson import encode_canonical_json  # or use jcs library
         
-        computed_hash = keccak(text=json_text)
+        response = requests.get(data_url)
+        metadata = response.json()
+        
+        # IMPORTANT: JSON must be canonicalized using JCS (RFC 8785) before hashing
+        canonical_json = encode_canonical_json(metadata).decode('utf-8')
+        computed_hash = keccak(text=canonical_json)
         return computed_hash.hex() == expected_hash.hex()
     
     def check_attestations(self, did: str, owner: str, data_hash: str):
@@ -287,8 +297,11 @@ result = client.verify_service_complete('did:web:api.example.com')
 
 if result['safe_to_use']:
     print(f"✅ {result['metadata']['name']} verified (trust: {result['trust_score']}/100)")
-    api_url = result['metadata']['endpoint']['url']
-    # Proceed to use API
+    # Get endpoint from endpoints array
+    endpoints = result['metadata'].get('endpoints', [])
+    if endpoints:
+        api_url = endpoints[0]['endpoint']
+        # Proceed to use API
 else:
     print(f"⚠️ Low trust score: {result['trust_score']}/100")
 ```
@@ -315,10 +328,17 @@ class MCPDiscovery:
             if 'api:mcp' not in metadata.get('traits', []):
                 continue
             
+            # Find MCP endpoint in endpoints array
+            mcp_endpoint = next(
+                (ep for ep in metadata.get('endpoints', []) if ep.get('name') == 'MCP'),
+                None
+            )
+            if not mcp_endpoint:
+                continue
+            
             # Check capability if specified
             if capability:
-                mcp_config = metadata.get('mcp', {})
-                tools = mcp_config.get('tools', [])
+                tools = mcp_endpoint.get('tools', [])
                 if not any(capability in tool['name'] for tool in tools):
                     continue
             
@@ -330,8 +350,8 @@ class MCPDiscovery:
             mcp_servers.append({
                 'did': service['did'],
                 'name': metadata['name'],
-                'endpoint': metadata['endpoint']['url'],
-                'tools': [t['name'] for t in metadata.get('mcp', {}).get('tools', [])],
+                'endpoint': mcp_endpoint['endpoint'],
+                'tools': [t['name'] for t in mcp_endpoint.get('tools', [])],
                 'trust_score': verification['trust_score']
             })
         

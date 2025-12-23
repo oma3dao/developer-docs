@@ -353,7 +353,10 @@ def discover_mcp_servers():
         metadata = requests.get(app['dataUrl']).json()
         
         # Find MCP endpoint in endpoints array
-        mcp_endpoint = next((ep for ep in metadata.get('endpoints', []) if ep.get('name') == 'MCP'), None)
+        mcp_endpoint = next(
+            (ep for ep in metadata.get('endpoints', []) if ep.get('name') == 'MCP'),
+            None
+        )
         
         if mcp_endpoint:
             mcp_servers.append({
@@ -603,8 +606,8 @@ export function ServiceCard({ did, major }: { did: string; major: number }) {
       {service.metadata.platforms?.web && (
         <a href={service.metadata.platforms.web.launchUrl}>Launch App</a>
       )}
-      {service.metadata.endpoint && (
-        <a href={service.metadata.endpoint.schemaUrl}>View API Docs</a>
+      {service.metadata.endpoints?.[0] && (
+        <a href={service.metadata.endpoints[0].schemaUrl}>View API Docs</a>
       )}
     </div>
   );

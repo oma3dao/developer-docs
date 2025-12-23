@@ -154,10 +154,13 @@ This API is registered on OMATrust:
 ```json
 {
   "name": "Example GraphQL API",
-  "endpoint": {
-    "url": "https://graphql.example.com/graphql",
-    "schemaUrl": "https://graphql.example.com/schema.graphql"
-  },
+  "endpoints": [
+    {
+      "name": "GraphQL API",
+      "endpoint": "https://graphql.example.com/graphql",
+      "schemaUrl": "https://graphql.example.com/schema.graphql"
+    }
+  ],
   "traits": ["api:graphql", "real-time", "subscriptions"]
 }
 ```
@@ -211,11 +214,14 @@ Register your RPC endpoint:
 {
   "name": "MyChain RPC",
   "description": "High-performance RPC endpoint for MyChain network",
-  "endpoint": {
-    "url": "https://rpc.mychain.org",
-    "schemaUrl": "https://docs.mychain.org/rpc-methods.json"
-  },
-  "interfaceVersions": ["2.0"],
+  "endpoints": [
+    {
+      "name": "JSON-RPC",
+      "endpoint": "https://rpc.mychain.org",
+      "schemaUrl": "https://docs.mychain.org/rpc-methods.json",
+      "interfaceVersions": ["2.0"]
+    }
+  ],
   "traits": ["api:jsonrpc", "blockchain", "high-performance"]
 }
 ```
@@ -229,9 +235,12 @@ Register your RPC endpoint:
 **Metadata includes payment info:**
 ```json
 {
-  "endpoint": {
-    "url": "https://paid-api.example.com/v1"
-  },
+  "endpoints": [
+    {
+      "name": "REST API",
+      "endpoint": "https://paid-api.example.com/v1"
+    }
+  ],
   "payments": [
     {
       "type": "x402",
@@ -298,10 +307,13 @@ const betaApi = await getService('did:web:api.example.com', 2);
 
 ```json
 {
-  "endpoint": {
-    "url": "https://api.example.com/v1",
-    "schemaUrl": "https://api.example.com/openapi.json"
-  },
+  "endpoints": [
+    {
+      "name": "REST API",
+      "endpoint": "https://api.example.com/v1",
+      "schemaUrl": "https://api.example.com/openapi.json"
+    }
+  ],
   "description": "Rate limit: 1000 req/hour for free tier. See https://example.com/pricing for paid tiers.",
   "traits": ["api:rest", "rate-limited", "auth:api-key"]
 }

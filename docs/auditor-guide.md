@@ -333,7 +333,7 @@ async function monitorUptime(did: string) {
   const service = await getService(did, 1);
   const metadata = await fetchMetadata(service.dataUrl);
   
-  const endpoint = metadata.endpoint?.url || metadata.platforms?.web?.launchUrl;
+  const endpoint = metadata.endpoints?.[0]?.endpoint || metadata.platforms?.web?.launchUrl;
   
   // Ping every minute
   const uptimeTracker = {
