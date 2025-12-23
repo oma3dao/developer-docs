@@ -164,10 +164,16 @@ async function verifyDataIntegrity(app: App) {
   const response = await fetch(app.dataUrl);
   const jsonText = await response.text();
   
-  // 2. Compute hash
-  const computedHash = ethers.id(jsonText); // keccak256
+  // 2. Canonicalize JSON using JCS (RFC 8785)
+  // Note: Use a JCS library for proper canonicalization
+  const canonicalJson = canonicalizeJson(jsonText);
   
-  // 3. Compare
+  // 3. Compute hash
+  const computedHash = app.dataHashAlgorithm === 'keccak256' 
+    ? ethers.id(canonicalJson)
+    : sha256(canonicalJson);
+  
+  // 4. Compare
   if (computedHash.toLowerCase() === app.dataHash.toLowerCase()) {
     return { valid: true, message: 'Data integrity verified' };
   } else {
@@ -180,6 +186,8 @@ async function verifyDataIntegrity(app: App) {
   }
 }
 ```
+
+**Important:** JSON must be canonicalized using JCS (JSON Canonicalization Scheme, RFC 8785) before hashing to ensure consistent hash values. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for complete details.
 
 ### Check Attestations
 
@@ -209,6 +217,8 @@ async function checkAttestations(did: string, ownerAddress: string, dataHash: st
   };
 }
 ```
+
+**Checking for Proofs:** Attestations may include cryptographic proofs for additional verification. When fetching metadata, check for a `proofs` array in attestation data. See the [Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md) for details on proof types and verification.
 
 ### Complete Verification Flow
 
@@ -342,13 +352,16 @@ def discover_mcp_servers():
         # Fetch metadata
         metadata = requests.get(app['dataUrl']).json()
         
-        if 'mcp' in metadata and 'endpoint' in metadata:
+        # Find MCP endpoint in endpoints array
+        mcp_endpoint = next((ep for ep in metadata.get('endpoints', []) if ep.get('name') == 'MCP'), None)
+        
+        if mcp_endpoint:
             mcp_servers.append({
                 'did': app['did'],
                 'name': metadata['name'],
-                'endpoint': metadata['endpoint']['url'],
-                'tools': metadata['mcp'].get('tools', []),
-                'resources': metadata['mcp'].get('resources', [])
+                'endpoint': mcp_endpoint['endpoint'],
+                'tools': mcp_endpoint.get('tools', []),
+                'resources': mcp_endpoint.get('resources', [])
             })
     
     return mcp_servers

@@ -70,7 +70,7 @@ Include:
 
 ```bash
 npx hardhat resolver-add-issuer \
-  --issuer 0xYourOracleAddress \
+  --issuer 0xYourIssuerAddress \
   --network omachainTestnet
 ```
 

@@ -20,7 +20,7 @@ An **attestation** is a cryptographically signed statement about a service, stor
 "I, [Issuer], verify that [Service] has [Property]"
 
 Examples:
-- "Trail of Bits verifies that did:web:defi.example.com passed security audit on 2025-01-15"
+- "SecureAudit Pro verifies that did:web:defi.example.com passed security audit on 2025-01-15"
 - "Oracle verifies that did:web:api.example.com owns the domain"
 - "User Alice gives did:web:game.example.com a 5-star rating"
 ```
@@ -33,11 +33,18 @@ Examples:
 
 ## Types of Attestations
 
+OMATrust supports two different attestation architectures:
+
+1. **AppRegistry Resolver Contract Attestations** - Basic attestations stored directly in the resolver contract
+2. **EAS Framework Attestations** - Structured attestations using the Ethereum Attestation Service
+
+### AppRegistry Resolver Contract Attestations
+
 ### 1. DID Ownership Attestations
 
 **Purpose:** Prove the service owner controls the DID
 
-**Issued by:** OMATrust oracle (automated)
+**Issued by:** OMATrust issuer (automated)
 
 **Schemas:**
 - `OMA3/DIDOwnership` - General DID control
@@ -49,7 +56,9 @@ Examples:
 **For did:web:**
 ```
 1. Fetch https://example.com/.well-known/did.json
-2. Check if wallet address in DID document
+   OR check DNS TXT record at _omatrust.example.com
+2. Check if wallet address in DID document or DNS TXT record
+   DNS format: v=1;controller=<DID>
 3. Issue attestation if match found
 ```
 
@@ -63,19 +72,22 @@ Examples:
 
 ### 2. DataHash Attestations
 
+**Architecture:** AppRegistry Resolver Contract
+
 **Purpose:** Verify the integrity of metadata at dataUrl
 
-**Issued by:** OMATrust oracle (automated on registration)
+**Issued by:** OMATrust issuer (automated on registration)
 
 **Flow:**
 ```typescript
 // 1. App registers with dataUrl
 dataUrl: "https://api.example.com/metadata.json"
-dataHash: "0xabc123..." (keccak256 of JSON content)
+dataHash: "0xabc123..." (keccak256 of JCS-canonicalized JSON)
 
-// 2. Oracle fetches and verifies
+// 2. Issuer fetches and verifies
 const fetched = await fetch(dataUrl);
-const computed = keccak256(fetched);
+const canonicalized = canonicalizeJson(fetched); // JCS (RFC 8785)
+const computed = keccak256(canonicalized);
 
 if (computed === dataHash) {
   // 3. Issue attestation
@@ -88,30 +100,28 @@ if (computed === dataHash) {
 const verified = await resolver.checkDataHashAttestation(didHash, dataHash);
 if (verified) {
   // ✅ Metadata hasn't been tampered with
-  // ✅ Oracle confirmed the hash
+  // ✅ Issuer confirmed the hash
 }
 ```
 
+**Important:** JSON must be canonicalized using JCS (JSON Canonicalization Scheme, RFC 8785) before hashing. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for details.
+
 ### 3. Security Audit Attestations
+
+**Architecture:** EAS Framework
 
 **Purpose:** Prove a service passed professional security review
 
 **Issued by:** Security firms, auditing companies
 
-**Examples:**
-- Trail of Bits
-- CertiK
-- OpenZeppelin
-- Hacken
-
 **Schema Fields:**
 ```typescript
 {
-  auditor: "Trail of Bits",
+  auditor: "SecureAudit Pro",
   did: "did:web:defi.example.com",
   auditType: "smart-contract-security",
   passed: true,
-  reportUrl: "https://audits.trailofbits.com/report-123.pdf",
+  reportUrl: "https://audits.secureauditpro.com/report-123.pdf",
   timestamp: 1735689600,
   expiresAt: 1767225600, // Valid for 1 year
   severity: {
@@ -123,39 +133,9 @@ if (verified) {
 }
 ```
 
-### 4. Compliance Attestations
+### 4. User Review Attestations
 
-**Purpose:** Prove regulatory or industry compliance
-
-**Examples:**
-- GDPR compliant
-- SOC2 certified
-- HIPAA compliant
-- Age rating (ESRB, PEGI)
-
-**Issued by:**
-- Compliance auditors
-- Industry certification bodies
-- Legal firms
-
-### 5. Performance/Uptime Attestations
-
-**Purpose:** Verify SLA compliance, reliability
-
-**Issued by:** Monitoring oracles, independent observers
-
-**Metrics:**
-```typescript
-{
-  did: "did:web:api.example.com",
-  uptime: 99.97,
-  avgResponseTime: 120, // ms
-  period: "30d",
-  timestamp: 1735689600
-}
-```
-
-### 6. User Review Attestations
+**Architecture:** EAS Framework
 
 **Purpose:** Community feedback and ratings
 
@@ -169,18 +149,92 @@ if (verified) {
   rating: 4.5,
   category: "gameplay",
   comment: "Great graphics, minor bugs",
-  timestamp: 1735689600
+  timestamp: 1735689600,
+  proofs: [] // Optional proof array for verification
 }
 ```
 
-**Anti-Sybil:** Reviewers must be verified through:
-- Proof of personhood
-- On-chain activity history
-- Social graph attestations
+**Proofs in Attestations:** Attestations can include cryptographic proofs for additional verification. See the [Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md) for details on proof types and verification mechanisms.
+
+
+
+### EAS Framework Attestations
+
+The following attestation types are implemented using the EAS framework with structured schemas:
+
+#### Certification Attestations
+
+**Purpose:** Prove regulatory or industry compliance
+
+**Architecture:** EAS Framework  
+**Schema:** Certification schema
+
+**Examples:**
+- GDPR compliant
+- SOC2 certified
+- HIPAA compliant
+- Age rating (ESRB, PEGI)
+
+**Issued by:**
+- Compliance auditors
+- Industry certification bodies
+- Legal firms
+
+**Note:** Certification attestations replace the older "Compliance Attestations" terminology.
+
+#### Endorsement Attestations
+
+**Purpose:** Lightweight attestations indicating support, trust, or approval
+
+**Architecture:** EAS Framework  
+**Schema:** Endorsement schema
+
+**Use Cases:**
+- Organization endorsements
+- Trust signals
+- Approval attestations
+
+#### Security Assessment Attestations
+
+**Purpose:** Prove a service passed professional security review
+
+**Architecture:** EAS Framework  
+**Schema:** Security Assessment schema
+
+**Issued by:** Security firms, auditing companies
+
+**Examples:**
+- SecureAudit Pro
+- CertiK
+- OpenZeppelin
+- Hacken
+
+**Schema Fields:**
+```typescript
+{
+  auditor: "SecureAudit Pro",
+  did: "did:web:defi.example.com",
+  auditType: "smart-contract-security",
+  passed: true,
+  reportUrl: "https://audits.secureauditpro.com/report-123.pdf",
+  timestamp: 1735689600,
+  expiresAt: 1767225600, // Valid for 1 year
+  severity: {
+    critical: 0,
+    high: 0,
+    medium: 2,
+    low: 5
+  }
+}
+```
+
+**Note:** Performance and uptime attestations are not currently supported in the EAS framework.
 
 ## Attestation Architecture
 
-### Resolver Contract
+OMATrust uses two different attestation architectures:
+
+### 1. Resolver Contract
 
 **Contract:** `OMA3ResolverWithStore.sol`
 
@@ -206,14 +260,14 @@ function checkDataHashAttestation(bytes32 didHash, bytes32 dataHash)
 **Adding issuers (admin only):**
 ```bash
 npx hardhat resolver-add-issuer \
-  --issuer 0xOracleAddress \
+  --issuer 0xIssuerAddress \
   --network omachainTestnet
 ```
 
 **Removing issuers:**
 ```bash
 npx hardhat resolver-remove-issuer \
-  --issuer 0xOracleAddress \
+  --issuer 0xIssuerAddress \
   --network omachainTestnet
 ```
 
@@ -234,6 +288,50 @@ maturationTime: 60 seconds (default, configurable)
 ```
 
 Attestations don't become "valid" until maturation period passes. This allows time for community review and prevents flash-loan style attacks.
+
+
+
+### 2. EAS Framework
+
+**Contracts:** `EAS.sol`, `SchemaRegistry.sol`  
+**Purpose:** Structured attestations with custom schemas
+
+**Core Functions:**
+```solidity
+// Register schema
+function register(string calldata schema) external returns (bytes32)
+
+// Issue attestation
+function attest(
+  bytes32 schema,
+  address recipient,
+  uint64 expirationTime,
+  bool revocable,
+  bytes32 refUID,
+  bytes calldata data
+) external payable returns (bytes32)
+```
+
+**Schema-Based Attestations:**
+- Certification schema - For compliance and certification attestations
+- Endorsement schema - For trust and approval attestations  
+- Security Assessment schema - For security audit attestations
+
+**Key Features:**
+- Structured data via JSON schemas
+- Revocable attestations (when configured)
+- Cross-chain support
+- Standardized query interface
+
+**Querying EAS Attestations:**
+```typescript
+import { EAS } from '@ethereum-attestation-service/eas-sdk';
+
+const eas = new EAS(easContractAddress);
+const attestation = await eas.getAttestation(attestationUID);
+```
+
+**Challenge Mechanism:** The resolver supports challenges to disputed attestations. Multiple issuers can attest to the same DID, and conflicts are resolved through a challenge process with maturation delays. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for complete details on conflict resolution.
 
 ## Using Attestations (Client Perspective)
 
@@ -351,7 +449,6 @@ const result = await sendTransaction({ transaction: tx, account: issuerAccount }
 
 **2. Set appropriate expiration:**
 - Security audits: 6-12 months
-- Uptime attestations: 30 days (renew frequently)
 - Compliance: Match certification validity
 
 **3. Revoke if needed:**
@@ -440,22 +537,13 @@ Potential monetization for issuers:
 ### Pattern 2: Professional Audit
 
 ```
-1. Developer requests audit from Trail of Bits
-2. Trail of Bits conducts review
-3. If passed, Trail of Bits issues attestation
-4. Service shows "Audited by Trail of Bits" badge
+1. Developer requests audit from SecureAudit Pro
+2. SecureAudit Pro conducts review
+3. If passed, SecureAudit Pro issues attestation
+4. Service shows "Audited by SecureAudit Pro" badge
 ```
 
-### Pattern 3: Continuous Verification
-
-```
-1. Monitoring oracle watches service uptime
-2. Every 24 hours, issues fresh uptime attestation
-3. Clients see real-time reliability data
-4. If downtime exceeds threshold, oracle stops attesting
-```
-
-### Pattern 4: Community Reviews
+### Pattern 3: Community Reviews
 
 ```
 1. User tries service, has good experience
@@ -552,9 +640,9 @@ Based on attestations, services can be categorized:
 
 ## Attestation Schemas (Future)
 
-OMATrust will adopt EAS (Ethereum Attestation Service) schemas:
+OMATrust uses EAS (Ethereum Attestation Service) schemas for structured attestations. For complete schema definitions, see the [Reputation Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md).
 
-### Security Audit Schema
+### Security Audit Schema (Example)
 ```typescript
 {
   auditor: address,
@@ -570,27 +658,19 @@ OMATrust will adopt EAS (Ethereum Attestation Service) schemas:
 }
 ```
 
-### Uptime Schema
-```typescript
-{
-  oracle: address,
-  uptime: uint16,  // basis points (9997 = 99.97%)
-  avgResponseTime: uint32, // milliseconds
-  periodDays: uint8,
-  timestamp: uint64
-}
-```
-
-### User Review Schema
+### User Review Schema (Example)
 ```typescript
 {
   reviewer: address,
   rating: uint8,  // 1-5 stars
   category: string, // "ux", "performance", "support"
   verified: boolean, // proof of personhood
-  timestamp: uint64
+  timestamp: uint64,
+  proofs: [] // Optional cryptographic proofs
 }
 ```
+
+For complete attestation schemas and proof integration, refer to the [Reputation Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md).
 
 ## Roadmap
 
@@ -603,7 +683,6 @@ OMATrust will adopt EAS (Ethereum Attestation Service) schemas:
 ### Phase 2 (Q1 2025)
 - EAS integration for structured schemas
 - Security audit attestations (partner with audit firms)
-- Uptime monitoring oracles
 - Multi-issuer support
 
 ### Phase 3 (Q2 2025)

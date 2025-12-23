@@ -92,7 +92,9 @@ The wizard opens with 6-8 steps (depending on selected interfaces).
 
 **DID Verification:**
 - Click "Verify DID Ownership"
-- For did:web: Server checks `.well-known/did.json`
+- For did:web: Server checks `.well-known/did.json` OR DNS TXT record at `_omatrust.<domain>`
+  - DNS TXT format: `v=1;controller=<DID>`
+  - Example: `_omatrust.example.com` TXT `v=1;controller=did:web:example.com`
 - For did:pkh: Server verifies contract ownership
 - Attestation issued automatically
 - Wait for "✅ Verified" status
@@ -217,16 +219,32 @@ Host this JSON at your custom dataUrl endpoint.
 
 ### Update Metadata
 
+**Version Control Rules:**
+
+When updating your service, different changes require different version increments:
+
+| Change | Version Rule |
+|--------|--------------|
+| Major version bump (e.g., 1.x → 2.x) | **Must mint new NFT** |
+| Edit `interfaces` (add new interface) | Requires `minor+1` (additive only) |
+| Edit `traitHashes` | Requires `patch+1` or `minor+1` |
+| Edit `dataUrl` or `fungibleTokenId` | **Must mint new DID** |
+| Edit `contractId` | **Not allowed** (immutable) |
+| Transfer NFT ownership | Allowed without version changes |
+
+See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for complete details.
+
 **For default dataUrl:**
 1. Click "Edit" on your app card
 2. Update fields in wizard
-3. Submit update transaction
-4. New metadata stored on-chain
-5. Version history updated
+3. System automatically increments version based on changes
+4. Submit update transaction
+5. New metadata stored on-chain
+6. Version history updated
 
 **For custom dataUrl:**
 1. Update JSON at your endpoint
-2. Compute new hash: `keccak256(jsonString)`
+2. Compute new hash using JCS canonicalization: `keccak256(canonicalizedJson)`
 3. Call `updateAppControlled()` with new dataUrl, hash, and metadata
 4. Or use wizard "Edit" and it handles hashing and version increment
 
@@ -253,12 +271,13 @@ New owner can now update metadata and status.
 ### "DID Verification Failed"
 
 **Causes:**
-- did:web: DID document not found at `/.well-known/did.json`
-- did:web: Wallet address not in DID document
+- did:web: DID document not found at `/.well-known/did.json` AND no DNS TXT record
+- did:web: Wallet address not in DID document or DNS TXT record
 - did:pkh: Contract owner doesn't match wallet
 
 **Solutions:**
-- Verify DID document is accessible
+- Verify DID document is accessible at `https://<domain>/.well-known/did.json`
+- OR add DNS TXT record: `_omatrust.<domain>` with value `v=1;controller=<your-DID>`
 - Check wallet address is correct
 - For contracts: ensure you're the owner/admin
 

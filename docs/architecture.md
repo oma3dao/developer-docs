@@ -14,10 +14,11 @@ This document explains how OMATrust works under the hood: the smart contracts, d
 
 ## System Components
 
-### 1. App Registry Contract
+### 1. Identity Registry Contract
 
 **Contract:** `OMA3AppRegistry.sol`  
-**Purpose:** Tokenize services as ERC-721 NFTs with metadata extensions
+**Purpose:** Tokenize services as ERC-721 NFTs with metadata extensions  
+**Standard:** Compatible with ERC-8009 (Tokenized Services)
 
 **Core Functions:**
 ```solidity
@@ -84,6 +85,38 @@ function checkDataHashAttestation(bytes32 didHash, bytes32 dataHash) view return
 3. Oracle writes attestation to resolver
 4. Clients query resolver for proof
 
+### 4. EAS Framework
+
+**Contracts:** `EAS.sol`, `SchemaRegistry.sol`  
+**Purpose:** Structured attestations for reputation, certifications, and security assessments
+
+**Integration:**
+OMATrust uses the Ethereum Attestation Service (EAS) for structured attestations beyond basic DID ownership verification. EAS provides a standardized framework for creating, querying, and managing on-chain attestations with custom schemas.
+
+**Core Components:**
+- **Schema Registry** - Register custom attestation schemas
+- **EAS Contract** - Issue and manage attestations following registered schemas
+
+**Supported Attestation Types:**
+- **Certification** - Compliance and certification attestations
+- **Endorsement** - Trust and approval attestations
+- **Security Assessment** - Security audit and vulnerability assessment attestations
+- **User Review** - Community feedback and ratings (1-5 stars) with optional cryptographic proofs
+- **User Review Response** - Responses from app owners to user reviews
+
+**Key Features:**
+- Schema-based attestations with structured data
+- Cryptographic proofs - Attestations can include cryptographic proofs that validate specific claims (e.g., proof of service usage for user reviews)
+- Revocable attestations (when configured)
+- Cross-chain attestation support
+- Standardized query interface for clients
+
+**Deployment:**
+```
+EAS:       0x8835AF90f1537777F52E482C8630cE4e947eCa32
+Schema Registry: 0x7946127D2f517c8584FdBF801b82F54436EC6FC7
+```
+
 ## Data Model
 
 ### App NFT Structure
@@ -95,12 +128,12 @@ interface App {
   versionHistory: Version[];      // Full version history
   
   // Interface support
-  interfaces: uint16;             // Bitmap: 1=Human, 2=API, 4=Contract
+  interfaces: uint16;             // Bitmap: bit 0=Human (value 1), bit 1=API (value 2), bit 2=Contract (value 4)
   
   // Metadata location
   dataUrl: string;                // URL to off-chain metadata JSON
   dataHash: bytes32;              // Hash of data at dataUrl
-  dataHashAlgorithm: uint8;       // 0=keccak256, 1=sha256
+  dataHashAlgorithm: string;      // "keccak256" or "sha256"
   
   // On-chain identifiers
   contractId: string;             // CAIP-10 contract address
@@ -111,7 +144,7 @@ interface App {
   status: uint8;                  // 0=Active, 1=Deprecated, 2=Replaced
   
   // Discoverability
-  traitHashes: bytes32[];         // Searchable tags
+  traitHashes: bytes32[];         // Searchable tags (≤20 entries)
 }
 ```
 
@@ -131,15 +164,20 @@ interface App {
     "web": {"launchUrl": "https://app.example.com"},
     "ios": {"downloadUrl": "https://...", "artifactDid": "did:artifact:..."}
   },
-  "endpoint": {
-    "url": "https://api.example.com",
-    "schemaUrl": "https://api.example.com/openapi.json"
-  },
-  "mcp": {
-    "tools": [...],
-    "resources": [...],
-    "prompts": [...]
-  },
+  "endpoints": [
+    {
+      "name": "REST API",
+      "endpoint": "https://api.example.com",
+      "schemaUrl": "https://api.example.com/openapi.json"
+    },
+    {
+      "name": "MCP",
+      "endpoint": "https://mcp.example.com",
+      "tools": [...],
+      "resources": [...],
+      "prompts": [...]
+    }
+  ],
   
   // Traits for discovery
   "traits": ["api:rest", "pay:x402", "gaming"]
@@ -197,7 +235,7 @@ Blockchain events provide history:
 2. Frontend calls: POST /api/verify-and-attest
 3. Server checks for existing attestations (fast path)
 4. If missing: checks contract owner matches connected wallet
-5. Issues attestation
+5. Issuer issues attestation
 6. User can mint
 ```
 
@@ -209,20 +247,29 @@ Blockchain events provide history:
 const response = await fetch(app.dataUrl);
 const jsonText = await response.text();
 
-// 2. Compute hash
-const computedHash = ethers.id(jsonText); // keccak256
+// 2. Canonicalize JSON using JCS (RFC 8785)
+// Note: Use a JCS library for proper canonicalization
+// See Identity Specification for details
+const canonicalJson = canonicalizeJson(jsonText);
 
-// 3. Compare with stored hash
+// 3. Compute hash
+const computedHash = app.dataHashAlgorithm === 'keccak256' 
+  ? ethers.id(canonicalJson)
+  : sha256(canonicalJson);
+
+// 4. Compare with stored hash
 if (computedHash === app.dataHash) {
   // ✅ Data hasn't been tampered with
 }
 
-// 4. Check for attestation
+// 5. Check for attestation
 const attested = await resolver.checkDataHashAttestation(didHash, dataHash);
 if (attested) {
-  // ✅ Oracle verified this hash
+  // ✅ Issuer verified this hash
 }
 ```
+
+**Important:** JSON must be canonicalized using JCS (JSON Canonicalization Scheme, RFC 8785) before hashing to ensure consistent hash values. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for complete details.
 
 ## Interface Types Explained
 
@@ -287,9 +334,11 @@ All interfaces: interfaces = 7
 
 **Contracts:**
 ```
-Registry:  0xb493465Bcb2151d5b5BaD19d87f9484c8B8A8e83
-Metadata:  0x13aD113D0DE923Ac117c82401e9E1208F09D7F19
-Resolver:  0x7946127D2f517c8584FdBF801b82F54436EC6FC7
+Registry:  0x63A7C12f54B4f42Cae7234f7e20c7A08f725B9F9
+Metadata:  0xFdd87eA429D963eCB671D409128dC94BFf5f0694
+Resolver:  0x77E058106762AeA4A567f2919Ef896bb6A82f914
+EAS:       0x8835AF90f1537777F52E482C8630cE4e947eCa32
+Schema Registry: 0x7946127D2f517c8584FdBF801b82F54436EC6FC7
 ```
 
 ### Mainnet (Planned)
@@ -310,19 +359,23 @@ Resolver:  0x7946127D2f517c8584FdBF801b82F54436EC6FC7
 
 **What's verified on-chain:**
 - ✅ DID ownership (via resolver attestation)
-- ✅ DataHash integrity (hash comparison)
+- ✅ DataHash integrity (hash comparison with JCS canonicalization)
 - ✅ Attestation signatures (EAS standard)
+- ✅ Attestation quality (cryptographic proofs validate claims)
 
 **What's NOT verified:**
 - ❌ Off-chain metadata content (you must trust dataUrl host)
-- ❌ Attestation quality (trust the issuer's reputation)
 
 ### Mitigation Strategies
 
-1. **DataHash verification** - Detect tampering
-2. **Issuer reputation** - Track oracle reliability
-3. **Multiple attestations** - Require consensus
-4. **Time-based maturation** - Delay before trust is granted
+1. **DataHash verification** - Detect tampering using JCS-canonicalized hashes
+2. **Issuer reputation** - Track issuer/attester reliability
+3. **Multiple attestations** - Require consensus from multiple issuers
+4. **Cryptographic proofs** - Attestations can include proofs that validate specific claims (see [Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md))
+5. **Challenge mechanism** - Resolver supports challenges to disputed attestations (see [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for details)
+6. **Maturation delay** - Time-based delay before trust is granted
+
+**DID → Index Address Mapping:** The system maps DIDs to Ethereum addresses for on-chain indexing. This mapping is handled by the SDK and contracts. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for technical details.
 
 ## Integration Points
 

@@ -85,73 +85,77 @@ await server.connect(transport);
 
 ### 2. Create MCP Metadata
 
-Prepare your MCP configuration for OMATrust:
+Prepare your MCP configuration for OMATrust. MCP configuration is placed inside the `endpoints` array:
 
 ```json
 {
-  "mcp": {
-    "tools": [
-      {
-        "name": "search_knowledge_base",
-        "description": "Search the knowledge base for information",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "query": { "type": "string", "description": "Search query" }
-          },
-          "required": ["query"]
-        }
-      },
-      {
-        "name": "get_documentation",
-        "description": "Retrieve documentation for a specific topic",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "topic": { "type": "string" }
+  "endpoints": [
+    {
+      "name": "MCP",
+      "endpoint": "https://mcp.example.com",
+      "tools": [
+        {
+          "name": "search_knowledge_base",
+          "description": "Search the knowledge base for information",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": { "type": "string", "description": "Search query" }
+            },
+            "required": ["query"]
+          }
+        },
+        {
+          "name": "get_documentation",
+          "description": "Retrieve documentation for a specific topic",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "topic": { "type": "string" }
+            }
           }
         }
-      }
-    ],
-    "resources": [
-      {
-        "uri": "file:///docs",
-        "name": "Documentation",
-        "description": "Product documentation and guides",
-        "mimeType": "text/markdown"
+      ],
+      "resources": [
+        {
+          "uri": "file:///docs",
+          "name": "Documentation",
+          "description": "Product documentation and guides",
+          "mimeType": "text/markdown"
+        },
+        {
+          "uri": "https://api.example.com/data",
+          "name": "API Data",
+          "description": "Real-time API data feed"
+        }
+      ],
+      "prompts": [
+        {
+          "name": "explain_feature",
+          "description": "Explain a product feature to users",
+          "arguments": [
+            {
+              "name": "feature",
+              "description": "Feature name",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "transport": {
+        "http": {
+          "url": "https://mcp.example.com",
+          "method": "POST"
+        }
       },
-      {
-        "uri": "https://api.example.com/data",
-        "name": "API Data",
-        "description": "Real-time API data feed"
-      }
-    ],
-    "prompts": [
-      {
-        "name": "explain_feature",
-        "description": "Explain a product feature to users",
-        "arguments": [
-          {
-            "name": "feature",
-            "description": "Feature name",
-            "required": true
-          }
-        ]
-      }
-    ],
-    "transport": {
-      "http": {
-        "url": "https://mcp.example.com",
-        "method": "POST"
-      }
-    },
-    "authentication": {
-      "oauth2": {
-        "authorizationUrl": "https://auth.example.com/oauth/authorize",
-        "tokenUrl": "https://auth.example.com/oauth/token"
+      "authentication": {
+        "oauth2": {
+          "authorizationUrl": "https://auth.example.com/oauth/authorize",
+          "tokenUrl": "https://auth.example.com/oauth/token"
+        }
       }
     }
-  }
+  ]
 }
 ```
 
@@ -173,11 +177,12 @@ Prepare your MCP configuration for OMATrust:
 - Publisher: "Example Corp"
 
 **Step 7 - API Config:**
-- Endpoint URL: `https://mcp.example.com`
-- Schema URL: `https://mcp.example.com/schema.json`
-- Interface Versions: `1.0`
+- Click "+ Add Endpoint"
+  - Name: "MCP"
+  - Endpoint URL: `https://mcp.example.com`
+  - Schema URL: `https://mcp.example.com/schema.json` (optional)
 
-**MCP Configuration:**
+**MCP Configuration (inside endpoint):**
 - Click "+ Add Tool" for each tool
   - Name: `search_knowledge_base`
   - Description: "Search the knowledge base"
@@ -187,6 +192,7 @@ Prepare your MCP configuration for OMATrust:
   - Name: "Documentation"
 - Click "+ Add Prompt" for each prompt
 - Configure transport & authentication (JSON mode)
+- Interface Versions: `1.0`
 
 **Step 6 - Review & Submit**
 
@@ -214,12 +220,15 @@ def discover_mcp_servers():
         # Fetch metadata
         metadata = requests.get(service['dataUrl']).json()
         
-        servers.append({
-            'name': metadata['name'],
-            'endpoint': metadata['endpoint']['url'],
-            'tools': [t['name'] for t in metadata.get('mcp', {}).get('tools', [])],
-            'did': service['did']
-        })
+        # Find MCP endpoint
+        mcp_endpoint = next((ep for ep in metadata.get('endpoints', []) if ep.get('name') == 'MCP'), None)
+        if mcp_endpoint:
+            servers.append({
+                'name': metadata['name'],
+                'endpoint': mcp_endpoint['endpoint'],
+                'tools': [t['name'] for t in mcp_endpoint.get('tools', [])],
+                'did': service['did']
+            })
     
     return servers
 
@@ -276,13 +285,14 @@ const mcpConfig = generateMcpConfig(myServer);
 async function updateMcpMetadata(newTools: Tool[]) {
   const currentMetadata = await fetchMetadata(service.dataUrl);
   
-  // Update MCP tools
+  // Update MCP tools in endpoints array
+  const mcpEndpoint = currentMetadata.endpoints.find(ep => ep.name === 'MCP');
+  if (mcpEndpoint) {
+    mcpEndpoint.tools = newTools;
+  }
+  
   const updatedMetadata = {
-    ...currentMetadata,
-    mcp: {
-      ...currentMetadata.mcp,
-      tools: newTools
-    }
+    ...currentMetadata
   };
   
   // Compute new hash
@@ -646,18 +656,19 @@ function checkRateLimit(agentDid: string): boolean {
   "publisher": "Example Corp",
   "external_url": "https://example.com/mcp",
   "supportUrl": "https://example.com/mcp/docs",
-  "endpoint": {
-    "url": "https://mcp.example.com",
-    "schemaUrl": "https://mcp.example.com/schema.json"
-  },
-  "interfaceVersions": ["1.0"],
-  "mcp": {
-    "tools": [...],
-    "resources": [...],
-    "prompts": [...],
-    "transport": {...},
-    "authentication": {...}
-  },
+  "endpoints": [
+    {
+      "name": "MCP",
+      "endpoint": "https://mcp.example.com",
+      "schemaUrl": "https://mcp.example.com/schema.json",
+      "interfaceVersions": ["1.0"],
+      "tools": [...],
+      "resources": [...],
+      "prompts": [...],
+      "transport": {...},
+      "authentication": {...}
+    }
+  ],
   "traits": ["api:mcp", "ai", "knowledge-base", "search"]
 }
 ```
@@ -696,9 +707,13 @@ async function main() {
   const service = await getService(did, 1);
   const metadata = await fetchMetadata(service.dataUrl);
   
+  // Find MCP endpoint
+  const mcpEndpoint = metadata.endpoints.find(ep => ep.name === 'MCP');
+  if (!mcpEndpoint) throw new Error('No MCP endpoint found');
+  
   // Connect to MCP server
-  const mcpClient = new MCPClient(metadata.endpoint.url);
-  await mcpClient.connect(metadata.mcp);
+  const mcpClient = new MCPClient(mcpEndpoint.endpoint);
+  await mcpClient.connect(mcpEndpoint);
   
   // Now Claude can use the tools
   console.log(`Connected to ${metadata.name}`);
@@ -724,8 +739,13 @@ async def connect_to_omatrust_mcp(did: str):
     if not verified['ownerVerified']:
         raise Exception(f"MCP server {did} not verified")
     
+    # Find MCP endpoint
+    mcp_endpoint = next((ep for ep in metadata.get('endpoints', []) if ep.get('name') == 'MCP'), None)
+    if not mcp_endpoint:
+        raise Exception(f"No MCP endpoint found for {did}")
+    
     # Connect using MCP SDK
-    client = Client(metadata['endpoint']['url'])
+    client = Client(mcp_endpoint['endpoint'])
     await client.initialize()
     
     # List available tools

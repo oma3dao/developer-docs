@@ -125,7 +125,7 @@ Contract ID: eip155:1:0xNFTContract (NFT it manages)
 **DataHash** is a cryptographic hash (keccak256 or sha256) of your metadata JSON. It enables:
 
 1. **Integrity verification** - Detect if metadata was tampered with
-2. **Attestations** - Oracles can attest they verified the hash
+2. **Attestations** - Issuers can attest they verified the hash
 3. **Auditing** - Track metadata changes over time
 
 **Example:**
@@ -238,7 +238,7 @@ Attestations must be renewed before expiration.
 **Category:**
 - `gaming`, `defi`, `social`, `ai`, `enterprise`, `healthcare`, etc.
 
-**See full list:** [Trait Appendix in Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification.md#appendix-c---trait-names)
+**See full list:** [Trait Appendix in Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md#appendix-c)
 
 ### Can I remove my service from the registry?
 
@@ -421,7 +421,7 @@ Gas costs vary with network congestion.
 ### "Attestation not found"
 
 **Causes:**
-- Oracle hasn't processed yet (wait 1-2 minutes)
+- Issuer hasn't processed yet (wait 1-2 minutes)
 - Maturation period (60 seconds)
 - Verification failed
 
@@ -490,7 +490,7 @@ Gas costs vary with network congestion.
 **Ways to contribute:**
 - Write documentation
 - Build integrations
-- Issue attestations (become oracle)
+- Issue attestations (become issuer/oracle)
 - Participate in governance
 - Spread the word
 

@@ -21,13 +21,13 @@ Every tokenized service is an NFT with the following on-chain data:
 | `did` | string | Decentralized Identifier (e.g., `did:web:example.com`) |
 | `versionMajor` | uint8 | Major version number (indexed for lookups) |
 | `versionHistory` | Version[] | Complete version history (major.minor.patch) |
-| `interfaces` | uint16 | Bitmap: 1=Human, 2=API, 4=Contract |
+| `interfaces` | uint16 | Bitmap: bit 0=Human (value 1), bit 1=API (value 2), bit 2=Contract (value 4) |
 | `dataUrl` | string | URL to off-chain metadata JSON |
 | `dataHash` | bytes32 | Hash of metadata for integrity verification |
-| `dataHashAlgorithm` | uint8 | Hash algorithm: 0=keccak256, 1=sha256 |
+| `dataHashAlgorithm` | string | Hash algorithm: "keccak256" or "sha256" (default is VM-specific, e.g., keccak256 for EVM) |
 | `contractId` | string | CAIP-10 contract address (optional) |
 | `fungibleTokenId` | string | CAIP-19 token ID (optional) |
-| `traitHashes` | bytes32[] | Searchable tags (hashed) |
+| `traitHashes` | bytes32[] | Searchable tags (hashed). Capped at ≤20 entries on-chain. |
 | `minter` | address | Original creator |
 | `status` | uint8 | 0=Active, 1=Deprecated, 2=Replaced |
 
@@ -68,13 +68,13 @@ Services can support one or more interface types:
 - A2A agents (Agent-to-Agent)
 
 **Required Metadata:**
-- Endpoint URL
+- `endpoints` array with endpoint objects
 - API type (via traits: `api:rest`, `api:graphql`, `api:mcp`, etc.)
 
 **Optional Metadata:**
-- Schema URL (OpenAPI spec, GraphQL SDL, etc.)
+- Schema URL in endpoint object (OpenAPI spec, GraphQL SDL, etc.)
 - Interface versions (e.g., ["v1", "v2"])
-- MCP configuration (tools, resources, prompts)
+- MCP configuration (inside endpoints array for MCP type)
 
 ### Smart Contract Interface (4)
 
@@ -110,9 +110,9 @@ Services can support multiple interfaces:
 **Example:** `did:web:api.example.com`
 
 **Verification:** 
-- Fetch `https://<domain>/.well-known/did.json`
-- Verify wallet address in DID document
-- Oracle attests ownership to resolver
+- **Option 1:** Fetch `https://<domain>/.well-known/did.json` and verify wallet address in DID document
+- **Option 2:** Check DNS TXT record at `_omatrust.<domain>` with format: `v=1;controller=did:pkh:eip155:1:0x...`
+- Issuer attests ownership to resolver
 
 **Best For:**
 - Services with domains
@@ -127,8 +127,8 @@ Services can support multiple interfaces:
 
 **Verification:**
 - Extract chain and address from DID
-- Verify wallet controls contract
-- Oracle attests ownership
+- Verify wallet controls contract (via owner/admin functions or onchain proofs)
+- Issuer attests ownership
 
 **Best For:**
 - Smart contracts
@@ -142,9 +142,40 @@ Services can support multiple interfaces:
 **Approach:** Store JSON at `dataUrl`, store hash on-chain
 
 ```json
-dataUrl: "https://example.com/metadata.json"
-dataHash: "0xabc123..." (keccak256 of JSON)
+{
+  "name": "My Service",
+  "description": "Service description",
+  "publisher": "Publisher Name",
+  "version": "1.0.0",
+  "registrations": [
+    {
+      "chainId": "eip155:66238",
+      "registryAddress": "0x...",
+      "tokenId": "123"
+    }
+  ],
+  "endpoints": [
+    {
+      "name": "REST API",
+      "endpoint": "https://api.example.com/v1",
+      "schemaUrl": "https://api.example.com/openapi.json"
+    }
+  ],
+  "artifacts": {
+    "did:artifact:bafybei...": {
+      "type": "binary",
+      "os": "macos",
+      "architecture": "arm64"
+    }
+  }
+}
 ```
+
+**Key Fields:**
+- `registrations` (required) - Array of App Registry tokenizations
+- `version` - x.y.z format
+- `endpoints` - Array of endpoint objects (not singular)
+- `artifacts` - Map keyed by `did:artifact:<cidv1>`
 
 **Benefits:**
 - ✅ Gas efficient
@@ -155,6 +186,8 @@ dataHash: "0xabc123..." (keccak256 of JSON)
 **Trade-offs:**
 - ❌ Requires hosting
 - ❌ Availability risk (host could go down)
+
+**Note:** See [OMATrust Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for complete field definitions.
 
 ### On-Chain Metadata
 
@@ -267,6 +300,27 @@ event MetadataSet(
 - Audit metadata changes
 - Track update frequency
 
+### Version Control Policy
+
+The registry enforces specific rules for when version updates vs new mints are required:
+
+| Desired Change | On-chain Rule |
+|----------------|---------------|
+| Move from `(did, major)` → `(did, major+i)` | **Must mint a new NFT** |
+| Edit `interfaces` | Requires `minor+i`, must be additive only |
+| Edit `traitHashes` | Requires `patch+i` or `minor+i` |
+| Edit `dataUrl` or `fungibleTokenId` | **Must mint new DID** |
+| Edit `contractId` | **Not allowed** (immutable) |
+| Transfer NFT ownership | Allowed without version changes |
+
+**Key Rules:**
+- Major version changes require new NFT minting
+- Changing `dataUrl` or `fungibleTokenId` requires a completely new DID
+- `contractId` is immutable once set
+- Interface changes must be additive (can't remove interfaces)
+
+See [OMATrust Identity Specification §5.1.4](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for complete policy details.
+
 ## Trait-Based Discovery
 
 ### What are Traits?
@@ -294,7 +348,7 @@ traitHashes: [
 **Developer-Defined:**
 - `gaming`, `social`, `defi`, `nft`, `metaverse`, `ai`, `enterprise`
 
-You can define any trait you want.  OMA3 will add more suggested traits to the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification.md) in the future.
+You can define any trait you want.  OMA3 will add more suggested traits to the [OMATrust Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) in the future.
 
 ### Searching by Interface
 
@@ -359,6 +413,17 @@ const mcpServers = await indexer.query({
 
 For downloadable binaries, artifacts provide supply-chain security similar to Apple notarization or Windows Authenticode.
 
+### Artifact DID Format
+
+`did:artifact:<cidv1>` - CIDv1 base32 hash of artifact bytes (SHA-256 for V1)
+
+**Why CIDv1?**
+- Content-addressed (hash = identifier)
+- IPFS compatible
+- Self-verifying
+
+**Example:** `did:artifact:bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi`
+
 ### Structure
 
 **In platforms:**
@@ -366,6 +431,7 @@ For downloadable binaries, artifacts provide supply-chain security similar to Ap
 {
   "platforms": {
     "macos": {
+      "launchUrl": "myapp://",
       "downloadUrl": "https://example.com/app.dmg",
       "artifactDid": "did:artifact:bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
     }
@@ -381,19 +447,18 @@ For downloadable binaries, artifacts provide supply-chain security similar to Ap
       "type": "binary",
       "os": "macos",
       "architecture": "arm64",
+      "sizeBytes": 73400320,
+      "downloadUrls": ["https://example.com/app.dmg"],
+      "signatureUrls": [{"sigUrl": "https://example.com/app.dmg.sig", "sigAlgorithm": "x509"}]
     }
   }
 }
 ```
 
-### Artifact DID Format
-
-`did:artifact:<cidv1>` - CIDv1 base32 hash of artifact bytes
-
-**Why CIDv1?**
-- Content-addressed (hash = identifier)
-- IPFS compatible
-- Self-verifying
+**Artifact Types:**
+- `binary` - Executable files, installers
+- `container` - Docker/OCI images
+- `website` - SRI manifests for web apps
 
 ### Verification Flow
 
@@ -401,19 +466,21 @@ For downloadable binaries, artifacts provide supply-chain security similar to Ap
 // 1. Client fetches download URL
 const binary = await fetch(platforms.macos.downloadUrl);
 
-// 2. Compute hash
-const hash = sha256(binary);
+// 2. Compute CIDv1 hash (SHA-256)
+const hash = computeCIDv1(binary); // Using SHA-256 multihash
 
-// 3. Extract expected hash from artifact DID
+// 3. Compare with artifact DID
 const artifactDid = platforms.macos.artifactDid;
-const expectedHash = extractHashFromDid(artifactDid);
 
 // 4. Verify
-if (hash === expectedHash) {
+if (hash === artifactDid) {
   // ✅ Binary hasn't been tampered with
   // Safe to install!
 }
 ```
+
+**For complete artifact specification including SRI manifests for websites, see:**
+[OMATrust Identity Specification Appendix A](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md#appendix-a)
 
 ## Status Lifecycle
 
@@ -445,6 +512,32 @@ await registry.updateStatus("did:web:example.com", 1, 1); // Set to deprecated
 **Owner queries** (dashboard):
 - Show all statuses
 - Owner can manage deprecated apps
+
+## Optional Soulbound Mode
+
+Services can optionally be registered as **soulbound** (non-transferable):
+
+**When enabled:**
+- Transfers and approvals are rejected
+- Minting and burning remain allowed
+- Ownership is permanently bound to the minter
+
+**API:**
+```solidity
+// Check if a token is soulbound
+bool isSoulbound = registry.isSoulbound(tokenId);
+```
+
+**Use Cases:**
+- Personal identity services
+- Non-transferable credentials
+- Organizational services that shouldn't change hands
+
+**UI Guidance:**
+- App stores should visually label soulbound services
+- Users should be warned before minting soulbound tokens
+
+See [OMATrust Identity Specification §5.1.5](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for implementation details.
 
 ## Next Steps
 

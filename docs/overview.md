@@ -8,7 +8,7 @@ sidebar_position: 1
 # OMATrust Developer Documentation
 
 :::caution Draft Documentation
-This documentation is in **draft format** and under active development. Information may be incomplete, contain errors, or change as the protocol evolves. Please verify critical details against the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs) or join the [OMA3 Discord](https://discord.gg/oma3) for the latest updates.
+This documentation is in **draft format** and under active development. Information may be incomplete, contain errors, or change as the protocol evolves. Please verify critical details against the [OMATrust Specifications](https://github.com/oma3dao/omatrust-docs/tree/main/specification) or join the [OMA3 Discord](https://discord.gg/oma3) for the latest updates.
 :::
 
 **The Trust Layer for the Open Internet**
@@ -17,7 +17,9 @@ OMATrust is a decentralized verification protocol that brings the security and r
 
 **Learn More:**
 - 📄 [OMATrust Whitepaper](https://github.com/oma3dao/omatrust-docs/blob/main/whitepaper/omatrust-whitepaper.md) - Vision, economics, and the future of internet trust
-- 📋 [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification.md) - Technical specification and data formats
+- 📋 [OMATrust Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) - Application registry, DID ownership, and metadata formats
+- 🔐 [OMATrust Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md) - Cryptographic proofs for attestations
+- ⭐ [OMATrust Reputation Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md) - Attestation schemas and reputation system
 
 ## The Problem
 
@@ -46,7 +48,7 @@ Each registration creates a permanent, unique identifier that can be referenced 
 
 ### 2. **Attestations** - Cryptographic Proof
 
-Independent auditors and oracles publish verifiable attestations:
+Independent auditors, issuers, and oracles publish verifiable attestations:
 - **Security audits** - Code reviews, penetration testing
 - **Compliance certifications** - GDPR, SOC2, industry standards
 - **Official Endorsements** - Checkmarks from trustworthy institutions

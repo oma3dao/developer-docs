@@ -81,7 +81,7 @@ function admin() public view returns (address) {
 - Click "Verify DID Ownership"
 
 **Verification process:**
-1. Oracle extracts chain ID and address from DID
+1. Issuer extracts chain ID and address from DID
 2. Calls `contract.owner()` or `contract.admin()`
 3. Verifies it matches your connected wallet
 4. Issues attestation

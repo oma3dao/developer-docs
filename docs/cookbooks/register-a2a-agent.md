@@ -107,7 +107,7 @@ File: `https://agent.example.com/.well-known/agent-card.json`
 - Click "Verify DID Ownership"
 
 **Verification process:**
-1. Oracle fetches `https://agent.example.com/.well-known/did.json`
+1. Issuer fetches `https://agent.example.com/.well-known/did.json`
 2. Checks if your wallet in `verificationMethod`
 3. Issues attestation
 4. Shows "✅ Verified"
