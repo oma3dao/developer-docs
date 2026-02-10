@@ -45,6 +45,13 @@ const sidebars = {
       ],
     },
     {
+      type: 'category',
+      label: 'API Reference',
+      items: [
+        'api/controller-witness',
+      ],
+    },
+    {
       type: 'doc',
       id: 'faq',
       label: 'FAQ',
