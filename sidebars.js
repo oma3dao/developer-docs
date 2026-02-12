@@ -49,6 +49,7 @@ const sidebars = {
       label: 'API Reference',
       items: [
         'api/controller-witness',
+        'api/delegated-attestation',
       ],
     },
     {
