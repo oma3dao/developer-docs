@@ -46,7 +46,7 @@ curl -X POST https://api.omatrust.org/v1/controller-witness \
     "attestationUid": "0xabc123...def456",
     "chainId": 66238,
     "easContract": "0x7946127D2f517c8584FdBF801b82F54436EC6FC7",
-    "schemaUid": "0x290ce7f909a98f74d2356cf24102ac813555fa0bcd456f1bab17da2d92632e1d",
+    "schemaUid": "0x807b38ce9aa23fdde4457de01db9c5e8d6ec7c8feebee242e52be70847b7b966",
     "subject": "did:web:example.com",
     "controller": "did:pkh:eip155:66238:0x1234567890abcdef1234567890abcdef12345678",
     "method": "dns-txt"
@@ -86,7 +86,7 @@ curl -X POST https://api.omatrust.org/v1/controller-witness \
 | 400 | `INVALID_CONTROLLER` | Controller is not a valid DID |
 | 400 | `INVALID_METHOD` | Method is not `dns-txt` or `did-json` |
 | 403 | `CHAIN_NOT_APPROVED` | Chain ID or EAS contract not in the approved list |
-| 403 | `SCHEMA_NOT_APPROVED` | Schema UID not in the approved list |
+| 403 | `SCHEMA_NOT_APPROVED` | Schema UID is not a witness-enabled schema |
 | 404 | `ATTESTATION_NOT_FOUND` | The `attestationUid` does not resolve to an attestation on-chain |
 | 404 | `EVIDENCE_NOT_FOUND` | Controller evidence not found via the specified method |
 | 409 | `ATTESTATION_REVOKED` | The Key Binding attestation has been revoked |
@@ -156,7 +156,7 @@ The witness server only accepts attestations from approved chains and schemas.
 
 | Schema | UID (OMAchain Testnet) |
 |---|---|
-| Key Binding | `0x290ce7f909a98f74d2356cf24102ac813555fa0bcd456f1bab17da2d92632e1d` |
+| Key Binding | `0x807b38ce9aa23fdde4457de01db9c5e8d6ec7c8feebee242e52be70847b7b966` |
 
 ## Controller Witness Schema
 
