@@ -8,7 +8,7 @@ sidebar_position: 1
 # OMATrust Developer Documentation
 
 :::caution Draft Documentation
-This documentation is in **draft format** and under active development. Information may be incomplete, contain errors, or change as the protocol evolves. Please verify critical details against the [OMATrust Specifications](https://github.com/oma3dao/omatrust-docs/tree/main/specification) or join the [OMA3 Discord](https://discord.gg/oma3) for the latest updates.
+This documentation is in **draft format** and under active development. Information may be incomplete, contain errors, or change as the protocol evolves. Please verify critical details against the [OMATrust Specifications](https://github.com/oma3dao/omatrust-docs/tree/main/specification).
 :::
 
 **The Trust Layer for the Open Internet**

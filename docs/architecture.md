@@ -7,7 +7,7 @@ sidebar_position: 2
 # OMATrust Technical Architecture
 
 :::caution Draft Documentation
-This documentation is in **draft format** and under active development. Technical details may change as the protocol evolves. For the latest updates, see the [GitHub repository](https://github.com/oma3dao) or join the [OMA3 Discord](https://discord.gg/oma3).
+This documentation is in **draft format** and under active development. Technical details may change as the protocol evolves. For the latest updates, see the [GitHub repository](https://github.com/oma3dao).
 :::
 
 This document explains how OMATrust works under the hood: the smart contracts, data structures, and verification mechanisms that power the decentralized trust layer.
@@ -462,5 +462,5 @@ registry.mint(...12 parameters including metadataJson)
 
 ---
 
-**Questions?** Join the OMA3 Discord or open an issue on GitHub.
+**Questions?** Open an issue on GitHub.
 

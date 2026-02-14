@@ -787,5 +787,5 @@ if (trustScore > 80) {
 
 ---
 
-**Questions about attestations?** Visit [reputation.oma3.org](https://reputation.oma3.org) or join the OMA3 Discord.
+**Questions about attestations?** Visit [reputation.oma3.org](https://reputation.oma3.org) or email support@oma3.org.
 

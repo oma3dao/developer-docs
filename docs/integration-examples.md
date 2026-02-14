@@ -856,5 +856,5 @@ const graphqlApis = await queryServices('api:graphql');
 
 ---
 
-**Need help integrating?** Check the [GitHub examples repository](https://github.com/oma3dao/omatrust-examples) or join the Discord.
+**Need help integrating?** Check the [GitHub examples repository](https://github.com/oma3dao/omatrust-examples) or email support@oma3.org.
 

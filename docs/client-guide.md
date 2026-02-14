@@ -7,7 +7,7 @@ sidebar_position: 6
 # Client Integration Guide
 
 :::caution Draft Documentation
-API interfaces and code examples are subject to change. Test thoroughly before production use. Join [OMA3 Discord](https://discord.gg/oma3) for implementation support.
+API interfaces and code examples are subject to change. Test thoroughly before production use.
 :::
 
 Learn how to query the OMATrust registry and verify services in your application, whether you're building a web app, mobile app, AI agent, or smart contract.

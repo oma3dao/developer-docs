@@ -7,7 +7,7 @@ sidebar_position: 9
 # Frequently Asked Questions
 
 :::caution Draft Documentation
-FAQs are based on current understanding and may not reflect final implementation. For the most current information, visit [registry.omatrust.org](https://registry.omatrust.org) or join the [OMA3 Discord](https://discord.gg/oma3).
+FAQs are based on current understanding and may not reflect final implementation. For the most current information, visit [registry.omatrust.org](https://registry.omatrust.org).
 :::
 
 ## General
@@ -458,7 +458,6 @@ Gas costs vary with network congestion.
 - Open participation
 
 **Get involved:**
-- Join Discord
 - Participate in governance forums
 - Submit proposals
 - Vote on changes (token-based, future)
@@ -468,7 +467,6 @@ Gas costs vary with network congestion.
 ### Where can I get help?
 
 - **Documentation:** https://docs.omatrust.org
-- **Discord:** [Join OMATrust Discord](https://discord.gg/oma3)
 - **GitHub:** https://github.com/oma3dao
 - **Email:** support@oma3.org
 
@@ -508,5 +506,5 @@ Gas costs vary with network congestion.
 
 ---
 
-**Still have questions?** Join the [OMATrust Discord](https://discord.gg/oma3) or email support@oma3.org.
+**Still have questions?** Email support@oma3.org.
 

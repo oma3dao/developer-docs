@@ -741,4 +741,4 @@ async function recoverAllServices() {
 
 ---
 
-**Questions about infrastructure?** Join the OMA3 Discord #dev channel.
+**Questions about infrastructure?** Email support@oma3.org.

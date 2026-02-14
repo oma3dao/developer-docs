@@ -264,10 +264,6 @@ Contributions welcome!
 **Issues with documentation:**
 - GitHub Issues: https://github.com/oma3dao/developer-docs/issues
 
-**General OMATrust support:**
-- Discord: https://discord.gg/oma3
-- Email: support@oma3.org
-
 **Security issues:**
 - Email: security@oma3.org (responsible disclosure)
 

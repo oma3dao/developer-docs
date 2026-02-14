@@ -386,5 +386,5 @@ When releasing v2.0:
 
 ---
 
-**Questions?** Join OMA3 Discord or check the [FAQ](../faq.md).
+**Questions?** Check the [FAQ](../faq.md) or email support@oma3.org.
 
