@@ -4,6 +4,11 @@ title: Register MCP Server
 sidebar_position: 3
 ---
 
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
+
 # Cookbook: Register MCP Server
 
 :::caution Draft Documentation
@@ -837,7 +842,7 @@ npx @modelcontextprotocol/inspector \
 ## Next Steps
 
 - **[Register A2A Agent](./register-a2a-agent.md)** - Agent-to-agent protocol
-- **[Client Guide](../client-guide.md)** - Query MCP servers
+- **[Client Guide](/reputation/consumer-workflow)** - Query MCP servers
 - **MCP Specification:** [modelcontextprotocol.io](https://modelcontextprotocol.io)
 
 ---

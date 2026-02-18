@@ -500,9 +500,9 @@ Gas costs vary with network congestion.
 
 ## Next Steps
 
-- **[Get Started](./registration-guide.md)** - Register your first service
-- **[Cookbooks](./cookbooks/register-website.md)** - Specific examples
-- **[Architecture](./architecture.md)** - Technical deep dive
+- **[Get Started](/app-registry/registration-guide)** - Register your first service
+- **[Cookbooks](/app-registry/cookbooks/register-website)** - Specific examples
+- **[Architecture](/app-registry/registry-concepts)** - Technical deep dive
 
 ---
 

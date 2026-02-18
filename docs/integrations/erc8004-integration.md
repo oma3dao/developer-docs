@@ -1,7 +1,5 @@
 ---
-id: integration-examples
 title: Integration Code Examples
-sidebar_position: 8
 ---
 
 # Integration Code Examples
@@ -850,9 +848,9 @@ const graphqlApis = await queryServices('api:graphql');
 
 ## Next Steps
 
-- **[Cookbooks](./cookbooks/register-website.md)** - Specific use cases
-- **[Client Guide](./client-guide.md)** - More integration patterns
-- **[Architecture](./architecture.md)** - Technical deep dive
+- **[Cookbooks](/app-registry/cookbooks/register-website)** - Specific use cases
+- **[Client Guide](/reputation/consumer-workflow)** - More integration patterns
+- **[Architecture](/app-registry/registry-concepts)** - Technical deep dive
 
 ---
 

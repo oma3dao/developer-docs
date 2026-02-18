@@ -1,7 +1,5 @@
 ---
-id: attestations
 title: Attestation Framework
-sidebar_position: 4
 ---
 
 # Attestation Framework
@@ -781,9 +779,9 @@ if (trustScore > 80) {
 
 ## Next Steps
 
-- **[Registration Guide](./registration-guide.md)** - Register and get attested
-- **[Client Guide](./client-guide.md)** - Query attestations
-- **[Auditor Guide](./auditor-guide.md)** - Issue attestations
+- **[Registration Guide](/app-registry/registration-guide)** - Register and get attested
+- **[Client Guide](/reputation/consumer-workflow)** - Query attestations
+- **[Auditor Guide](/reputation/issuer-workflow)** - Issue attestations
 
 ---
 

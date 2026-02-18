@@ -1,8 +1,11 @@
 ---
-id: tokenized-app
 title: What is a Tokenized Service?
-sidebar_position: 3
 ---
+
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
 
 # What is a Tokenized Service?
 
@@ -543,8 +546,8 @@ See [OMATrust Identity Specification §5.1.5](https://github.com/oma3dao/omatrus
 
 - **[Registration Guide](./registration-guide.md)** - Register your first service
 - **[Cookbooks](./cookbooks/register-website.md)** - Specific examples
-- **[Attestations](./attestations.md)** - Build trust through verification
-- **[Client Integration](./client-guide.md)** - Query the registry
+- **[Attestations](/reputation/attestation-types)** - Build trust through verification
+- **[Client Integration](/reputation/consumer-workflow)** - Query the registry
 
 ---
 

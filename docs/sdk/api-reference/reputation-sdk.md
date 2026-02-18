@@ -10,7 +10,7 @@ Canonical function reference for:
 
 This is the implementation contract for reputation workflows, including attestation submission, querying, verification, proof functions, and the controller witness API client.
 
-For end-to-end workflow guides covering proof lifecycles, see the [Attestations Guide](../attestations.md) and the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs).
+For end-to-end workflow guides covering proof lifecycles, see the [Attestations Guide](/reputation/attestation-types) and the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs).
 
 ## High-Level vs Advanced APIs
 
@@ -251,7 +251,7 @@ function submitDelegatedAttestation(params: SubmitDelegatedAttestationParams): P
 ```
 
 - Purpose: Submit a signed delegated attestation via relay/gateway.
-- The `relayUrl` is the endpoint that accepts delegated attestation payloads (e.g., your API route or a shared gateway). See the [Delegated Attestation API](../api/delegated-attestation.md) for the relay contract.
+- The `relayUrl` is the endpoint that accepts delegated attestation payloads (e.g., your API route or a shared gateway). See the [Delegated Attestation API](/api/delegated-attestation) for the relay contract.
 - Throws: `INVALID_INPUT`, `NETWORK_ERROR`
 
 ### `getAttestation(params)`
@@ -333,7 +333,7 @@ function callControllerWitness(params: CallControllerWitnessParams): Promise<Cal
 ```
 
 - Purpose: Call controller witness endpoint with automatic fallback (tries `dns-txt` first, falls back to `did-json`).
-- The `gatewayUrl` is passed in by the consumer — not hardcoded. You decide whether to call your own API route or a shared gateway. See the [Controller Witness API](../api/controller-witness.md) for the raw endpoint contract.
+- The `gatewayUrl` is passed in by the consumer — not hardcoded. You decide whether to call your own API route or a shared gateway. See the [Controller Witness API](/api/controller-witness) for the raw endpoint contract.
 - Typically called after `submitAttestation` or `submitDelegatedAttestation` completes.
 - Throws: `NETWORK_ERROR`
 

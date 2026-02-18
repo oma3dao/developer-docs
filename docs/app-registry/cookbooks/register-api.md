@@ -4,6 +4,11 @@ title: Register an API
 sidebar_position: 2
 ---
 
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
+
 # Cookbook: Register an API
 
 :::caution Draft Documentation
@@ -351,7 +356,7 @@ const betaApi = await getService('did:web:api.example.com', 2);
 
 - **[Register MCP Server](./register-mcp-server.md)** - AI agent APIs
 - **[Register A2A Agent](./register-a2a-agent.md)** - Agent-to-agent
-- **[Client Guide](../client-guide.md)** - Query registered APIs
+- **[Client Guide](/reputation/consumer-workflow)** - Query registered APIs
 
 ---
 

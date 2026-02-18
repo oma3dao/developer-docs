@@ -4,6 +4,11 @@ title: Register A2A Agent
 sidebar_position: 4
 ---
 
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
+
 # Cookbook: Register A2A Agent
 
 :::caution Draft Documentation
@@ -840,8 +845,8 @@ async function loggedContactAgent(targetDid: string, message: any) {
 ## Next Steps
 
 - **[Register Smart Contract](./register-smart-contract.md)** - On-chain services
-- **[Client Guide](../client-guide.md)** - Query agents
-- **[Auditor Guide](../auditor-guide.md)** - Get attestations
+- **[Client Guide](/reputation/consumer-workflow)** - Query agents
+- **[Auditor Guide](/reputation/issuer-workflow)** - Get attestations
 
 ---
 

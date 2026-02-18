@@ -2,54 +2,35 @@ const sidebars = {
   docs: [
     {
       type: 'category',
-      label: 'Getting Started',
+      label: 'Start Here',
       items: [
-        'overview',
-        'tokenized-app',
-        'architecture',
+        'start-here/overview',
+        'start-here/quickstart-verify',
+        'start-here/quickstart-publish',
       ],
     },
     {
       type: 'category',
-      label: 'Core Concepts',
+      label: 'Reputation',
       items: [
-        'attestations',
-        'infrastructure',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Registration',
-      items: [
-        'registration-guide',
+        'reputation/reputation-model',
         {
-          type: 'category',
-          label: 'Cookbooks',
-          items: [
-            'cookbooks/register-website',
-            'cookbooks/register-api',
-            'cookbooks/register-mcp-server',
-            'cookbooks/register-a2a-agent',
-            'cookbooks/register-smart-contract',
-          ],
+          type: 'doc',
+          id: 'reputation/attestation-types',
+          label: 'Attestation Types',
         },
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Integration',
-      items: [
-        'client-guide',
-        'auditor-guide',
-        'integration-examples',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'API Reference',
-      items: [
-        'api/controller-witness',
-        'api/delegated-attestation',
+        'reputation/verification-flow',
+        'reputation/trust-scoring',
+        {
+          type: 'doc',
+          id: 'reputation/issuer-workflow',
+          label: 'Issuer Workflow',
+        },
+        {
+          type: 'doc',
+          id: 'reputation/consumer-workflow',
+          label: 'Consumer Workflow',
+        },
       ],
     },
     {
@@ -57,10 +38,137 @@ const sidebars = {
       label: 'SDK',
       items: [
         'sdk/getting-started',
-        'sdk/reputation-sdk',
-        'sdk/identity-registry-sdk',
-        'sdk/reputation-reference',
-        'sdk/identity-reference',
+        {
+          type: 'doc',
+          id: 'sdk/guides',
+          label: 'Guides',
+        },
+        {
+          type: 'category',
+          label: 'API Reference',
+          items: [
+            {
+              type: 'doc',
+              id: 'sdk/api-reference/reputation-sdk',
+              label: 'Reputation SDK',
+            },
+            {
+              type: 'doc',
+              id: 'sdk/api-reference/identity-sdk',
+              label: 'Identity SDK',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Schemas',
+          items: [
+            {
+              type: 'doc',
+              id: 'sdk/schemas/json-schemas',
+              label: 'JSON Schemas (Canonical)',
+            },
+            {
+              type: 'doc',
+              id: 'sdk/schemas/eas-schema-definitions',
+              label: 'EAS Schema Definitions',
+            },
+          ],
+        },
+        'sdk/data-model-overview',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Integrations',
+      items: [
+        {
+          type: 'category',
+          label: 'X402 Integration',
+          items: [
+            'integrations/x402-integration',
+            {
+              type: 'doc',
+              id: 'integrations/x402-extensions',
+              label: 'X402 Extensions (in review)',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'ERC8004 Integration',
+          items: [
+            {
+              type: 'doc',
+              id: 'integrations/erc8004-integration',
+              label: 'ERC8004 Integration',
+            },
+            {
+              type: 'doc',
+              id: 'integrations/erc8004-extensions',
+              label: 'ERC8004 Extensions (in development)',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'App Registry (Preview)',
+      items: [
+        'app-registry/status',
+        {
+          type: 'doc',
+          id: 'app-registry/erc8004-compatibility',
+          label: 'ERC-8004 compatibility and extensions',
+        },
+        {
+          type: 'doc',
+          id: 'app-registry/registry-concepts',
+          label: 'Registry Concepts',
+        },
+        'app-registry/deduplication-model',
+        'app-registry/migration-path',
+        'app-registry/registration-guide',
+        {
+          type: 'category',
+          label: 'Cookbooks',
+          items: [
+            'app-registry/cookbooks/register-website',
+            'app-registry/cookbooks/register-api',
+            'app-registry/cookbooks/register-mcp-server',
+            'app-registry/cookbooks/register-a2a-agent',
+            'app-registry/cookbooks/register-smart-contract',
+          ],
+        },
+        {
+          type: 'doc',
+          id: 'app-registry/registry-sdk-reference',
+          label: 'Registry SDK Reference',
+        },
+        'app-registry/cloudinary-guide',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Chain Architecture',
+      items: [
+        {
+          type: 'doc',
+          id: 'chain-architecture/omachain',
+          label: 'OMAChain',
+        },
+        'chain-architecture/other-chains',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Operations',
+      items: [
+        'operations/running-an-issuer',
+        'operations/governance-schema-control',
+        'operations/versioning-policy',
+        'operations/changelog',
       ],
     },
     {

@@ -4,6 +4,11 @@ title: Register Smart Contract
 sidebar_position: 5
 ---
 
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
+
 # Cookbook: Register a Smart Contract
 
 :::caution Draft Documentation
@@ -448,8 +453,8 @@ if (safety.trustScore < 70) {
 
 ## Next Steps
 
-- **[Auditor Guide](../auditor-guide.md)** - Get your contract audited
-- **[Client Guide](../client-guide.md)** - Verify contracts before use
+- **[Auditor Guide](/reputation/issuer-workflow)** - Get your contract audited
+- **[Client Guide](/reputation/consumer-workflow)** - Verify contracts before use
 - **[Register Website](./register-website.md)** - Frontend for your dApp
 
 ---

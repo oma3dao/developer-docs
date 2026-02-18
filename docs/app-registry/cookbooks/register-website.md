@@ -4,6 +4,11 @@ title: Register a Website
 sidebar_position: 1
 ---
 
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
+
 # Cookbook: Register a Website
 
 :::caution Draft Documentation
@@ -382,9 +387,8 @@ When releasing v2.0:
 
 - **[Register API](./register-api.md)** - API/GraphQL/REST services
 - **[Register Smart Contract](./register-smart-contract.md)** - On-chain apps
-- **[Client Guide](../client-guide.md)** - Query your registered service
+- **[Client Guide](/reputation/consumer-workflow)** - Query your registered service
 
 ---
 
-**Questions?** Check the [FAQ](../faq.md) or email support@oma3.org.
-
+**Questions?** Check the [FAQ](/faq) or email support@oma3.org.

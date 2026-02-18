@@ -1,8 +1,11 @@
 ---
-id: architecture
 title: Technical Architecture
-sidebar_position: 2
 ---
+
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
 
 # OMATrust Technical Architecture
 
@@ -455,10 +458,10 @@ registry.mint(...12 parameters including metadataJson)
 
 ## Learn More
 
-- **[Tokenized Services](./tokenized-app.md)** - Data model details
-- **[Attestation Framework](./attestations.md)** - How trust is verified
+- **[Tokenized Services](/app-registry/erc8004-compatibility)** - Data model details
+- **[Attestation Framework](/reputation/attestation-types)** - How trust is verified
 - **[Registration Cookbooks](./cookbooks/register-website.md)** - Specific examples
-- **[Client Guide](./client-guide.md)** - Integration for apps
+- **[Client Guide](/reputation/consumer-workflow)** - Integration for apps
 
 ---
 

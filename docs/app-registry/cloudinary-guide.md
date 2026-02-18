@@ -1,4 +1,12 @@
+---
+title: Cloudinary Image Hosting Guide
+---
+
 # Hosting Images on Cloudinary
+
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
 
 Use [Cloudinary](https://cloudinary.com/) to host your app icons, descriptions, and screenshots.
 

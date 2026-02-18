@@ -18,9 +18,9 @@ All in one module:
 
 `@oma3/omatrust/reputation`
 
-For the full function reference with types and error codes, see the [Reputation SDK Reference](./reputation-reference.md).
+For the full function reference with types and error codes, see the [Reputation SDK Reference](/sdk/api-reference/reputation-sdk).
 
-For end-to-end proof workflow guides (tx-encoded-value, DNS TXT, DID document, X.402 receipts, linked identifiers), see the [Attestations Guide](../attestations.md) and the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/specification).
+For end-to-end proof workflow guides (tx-encoded-value, DNS TXT, DID document, X.402 receipts, linked identifiers), see the [Attestations Guide](/reputation/attestation-types) and the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/specification).
 
 ## Core Functions
 
@@ -186,4 +186,4 @@ The SDK provides creation and verification functions for all seven proof types d
 | `tx-encoded-value`  | both                 | Deterministic native-value transfer proof                    |
 | `tx-interaction`    | `commercial-tx`      | On-chain smart contract interaction proof                    |
 
-See the [Reputation SDK Reference](./reputation-reference.md) for the full `create*Proof` and `verifyProof` function signatures.
+See the [Reputation SDK Reference](/sdk/api-reference/reputation-sdk) for the full `create*Proof` and `verifyProof` function signatures.

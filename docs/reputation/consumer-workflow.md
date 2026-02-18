@@ -1,7 +1,5 @@
 ---
-id: client-guide  
 title: Client Integration Guide
-sidebar_position: 6
 ---
 
 # Client Integration Guide
@@ -869,11 +867,11 @@ setInterval(() => {
 
 ## Next Steps
 
-- **[Cookbooks](./cookbooks/register-website.md)** - Practical examples
-- **[Auditor Guide](./auditor-guide.md)** - Issue attestations
-- **[Integration Examples](./integration-examples.md)** - Complete code samples
+- **[Cookbooks](/app-registry/cookbooks/register-website)** - Practical examples
+- **[Auditor Guide](/reputation/issuer-workflow)** - Issue attestations
+- **[Integration Examples](/integrations/erc8004-integration)** - Complete code samples
 
 ---
 
-**Building a client app?** Check out the [integration examples](./integration-examples.md) for complete code samples in TypeScript, Python, and Solidity.
+**Building a client app?** Check out the [integration examples](/integrations/erc8004-integration) for complete code samples in TypeScript, Python, and Solidity.
 

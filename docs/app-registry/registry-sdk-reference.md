@@ -2,6 +2,11 @@
 sidebar_position: 6
 ---
 
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
+
 # App Registry SDK Reference
 
 Canonical function reference for:

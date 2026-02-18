@@ -1,7 +1,5 @@
 ---
-id: auditor-guide
 title: Auditor & Oracle Guide
-sidebar_position: 7
 ---
 
 # Auditor & Oracle Guide
@@ -692,9 +690,9 @@ async function documentVerification(did: string, result: any) {
 
 ## Next Steps
 
-- **[Client Guide](./client-guide.md)** - Query attestations you issued
-- **[Cookbooks](./cookbooks/register-website.md)** - Understand what you're attesting
-- **[Attestations Framework](./attestations.md)** - Technical details
+- **[Client Guide](/reputation/consumer-workflow)** - Query attestations you issued
+- **[Cookbooks](/app-registry/cookbooks/register-website)** - Understand what you're attesting
+- **[Attestations Framework](/reputation/attestation-types)** - Technical details
 
 ---
 

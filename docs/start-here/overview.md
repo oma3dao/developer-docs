@@ -1,8 +1,6 @@
 ---
-id: overview
 title: Overview
 slug: /
-sidebar_position: 1
 ---
 
 # OMATrust Developer Documentation
@@ -142,7 +140,7 @@ Pick a Decentralized Identifier (DID) for your service:
 - Verification: Prove you control the contract
 - Best for: DeFi, NFTs, DAOs
 
-[Learn about DID verification →](./registration-guide.md#step-3-verification--interface-selection)
+[Learn about DID verification →](/app-registry/registration-guide#step-3-verification--interface-selection)
 
 ### 2. Connect & Register
 
@@ -191,10 +189,10 @@ Encourge your ecossytem to visit [reputation.oma3.org](https://reputation.oma3.o
 
 ## Next Steps
 
-- **[What is a Tokenized Service?](./tokenized-app.md)** - Understand the data model
-- **[Registration Guide](./registration-guide.md)** - Step-by-step walkthrough
-- **[Client Integration](./client-guide.md)** - Query and verify services
-- **[Cookbooks](./cookbooks/register-website.md)** - Specific use cases
+- **[What is a Tokenized Service?](/app-registry/erc8004-compatibility)** - Understand the data model
+- **[Registration Guide](/app-registry/registration-guide)** - Step-by-step walkthrough
+- **[Client Integration](/reputation/consumer-workflow)** - Query and verify services
+- **[Cookbooks](/app-registry/cookbooks/register-website)** - Specific use cases
 
 ---
 

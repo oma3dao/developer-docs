@@ -1,8 +1,11 @@
 ---
-id: registration-guide
 title: Registration Guide
-sidebar_position: 5
 ---
+
+:::caution Preview
+This App Registry documentation is in preview and is not production-ready.
+:::
+
 
 # Service Registration Guide
 
@@ -406,8 +409,8 @@ const result = await sendTransaction({ transaction: tx, account });
 ## Next Steps
 
 - **[Cookbooks](./cookbooks/register-website.md)** - Specific examples for your use case
-- **[Client Integration](./client-guide.md)** - Query registered services
-- **[Attestations](./attestations.md)** - Build trust through verification
+- **[Client Integration](/reputation/consumer-workflow)** - Query registered services
+- **[Attestations](/reputation/attestation-types)** - Build trust through verification
 
 ---
 

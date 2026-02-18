@@ -108,7 +108,7 @@ const address = didToAddress(did);
 
 ## Quick Start (App Registry)
 
-> Coming soon — the app-registry module is in testnet-only mode and has not been audited. See the [App Registry Reference](./app-registry-reference.md) for current API details.
+> Coming soon — the app-registry module is in testnet-only mode and has not been audited. See the [App Registry Reference](/app-registry/registry-sdk-reference) for current API details.
 
 ## Module Map
 
@@ -132,13 +132,13 @@ try {
 }
 ```
 
-See the [Reputation Reference](./reputation-reference.md) and [Identity Reference](./identity-reference.md) for the full error code tables.
+See the [Reputation Reference](/sdk/api-reference/reputation-sdk) and [Identity Reference](/sdk/api-reference/identity-sdk) for the full error code tables.
 
 ## Further Reading
 
-- [Reputation SDK Overview](./reputation-sdk.md) — workflow examples for attestation and verification
-- [Reputation SDK Reference](./reputation-reference.md) — canonical function signatures and types
-- [Identity SDK Reference](./identity-reference.md) — DID, CAIP, and data utility functions
-- [App Registry Reference](./app-registry-reference.md) — canonical function signatures for app registry
-- [Attestations Guide](../attestations.md) — end-to-end proof workflow documentation
+- [Reputation SDK Overview](/sdk/guides) — workflow examples for attestation and verification
+- [Reputation SDK Reference](/sdk/api-reference/reputation-sdk) — canonical function signatures and types
+- [Identity SDK Reference](/sdk/api-reference/identity-sdk) — DID, CAIP, and data utility functions
+- [App Registry Reference](/app-registry/registry-sdk-reference) — canonical function signatures for app registry
+- [Attestations Guide](/reputation/attestation-types) — end-to-end proof workflow documentation
 - [OMATrust Specification](https://github.com/oma3dao/omatrust-docs) — formal protocol specification

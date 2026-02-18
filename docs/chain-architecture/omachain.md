@@ -1,7 +1,5 @@
 ---
-id: infrastructure
 title: Infrastructure & Deployment
-sidebar_position: 10
 ---
 
 # Infrastructure & Deployment
@@ -374,7 +372,7 @@ Benefits:
 - Free tier: 25GB storage, 25GB bandwidth
 - Image optimization
 - Responsive images
-- See [Cloudinary Guide](./cloudinary-guide.md)
+- See [Cloudinary Guide](/app-registry/cloudinary-guide)
 
 ### Hosting Providers
 
@@ -735,9 +733,9 @@ async function recoverAllServices() {
 
 ## Next Steps
 
-- **[Architecture](./architecture.md)** - Technical deep dive
-- **[Client Guide](./client-guide.md)** - Integration patterns
-- **[FAQ](./faq.md)** - Common questions
+- **[Architecture](/app-registry/registry-concepts)** - Technical deep dive
+- **[Client Guide](/reputation/consumer-workflow)** - Integration patterns
+- **[FAQ](/faq)** - Common questions
 
 ---
 
