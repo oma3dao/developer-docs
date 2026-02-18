@@ -5,8 +5,8 @@ const sidebars = {
       label: 'Start Here',
       items: [
         'start-here/overview',
-        'start-here/quickstart-verify',
         'start-here/quickstart-publish',
+        'start-here/quickstart-verify',
       ],
     },
     {
@@ -20,7 +20,7 @@ const sidebars = {
           label: 'Attestation Types',
         },
         'reputation/verification-flow',
-        'reputation/trust-scoring',
+        // 'reputation/trust-scoring', // Hidden — see GitHub issue
         {
           type: 'doc',
           id: 'reputation/issuer-workflow',
@@ -75,7 +75,7 @@ const sidebars = {
             },
           ],
         },
-        'sdk/data-model-overview',
+        // 'sdk/data-model-overview', // Hidden — see GitHub issue
       ],
     },
     {
@@ -116,6 +116,7 @@ const sidebars = {
       type: 'category',
       label: 'App Registry (Preview)',
       items: [
+        'app-registry/overview',
         'app-registry/status',
         {
           type: 'doc',
@@ -149,33 +150,32 @@ const sidebars = {
         'app-registry/cloudinary-guide',
       ],
     },
-    {
-      type: 'category',
-      label: 'Chain Architecture',
-      items: [
-        {
-          type: 'doc',
-          id: 'chain-architecture/omachain',
-          label: 'OMAChain',
-        },
-        'chain-architecture/other-chains',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Operations',
-      items: [
-        'operations/running-an-issuer',
-        'operations/governance-schema-control',
-        'operations/versioning-policy',
-        'operations/changelog',
-      ],
-    },
-    {
-      type: 'doc',
-      id: 'faq',
-      label: 'FAQ',
-    },
+    // Chain Architecture — hidden, see GitHub issue
+    // {
+    //   type: 'category',
+    //   label: 'Chain Architecture',
+    //   items: [
+    //     'chain-architecture/omachain',
+    //     'chain-architecture/other-chains',
+    //   ],
+    // },
+    // Operations — hidden, see GitHub issue
+    // {
+    //   type: 'category',
+    //   label: 'Operations',
+    //   items: [
+    //     'operations/running-an-issuer',
+    //     'operations/governance-schema-control',
+    //     'operations/versioning-policy',
+    //     'operations/changelog',
+    //   ],
+    // },
+    // FAQ — hidden, see GitHub issue
+    // {
+    //   type: 'doc',
+    //   id: 'faq',
+    //   label: 'FAQ',
+    // },
   ],
 };
 
