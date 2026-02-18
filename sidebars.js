@@ -53,6 +53,17 @@ const sidebars = {
       ],
     },
     {
+      type: 'category',
+      label: 'SDK',
+      items: [
+        'sdk/getting-started',
+        'sdk/reputation-sdk',
+        'sdk/identity-registry-sdk',
+        'sdk/reputation-reference',
+        'sdk/identity-reference',
+      ],
+    },
+    {
       type: 'doc',
       id: 'faq',
       label: 'FAQ',
