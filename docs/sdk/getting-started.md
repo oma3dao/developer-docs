@@ -37,7 +37,7 @@ For hands-on code walkthroughs, see the quickstart guides:
 
 If you use direct on-chain submission (`submitAttestation`), the signing wallet must have enough native gas token on the target chain to pay transaction fees.
 
-- On OMAChain Testnet, fund the signer with OMA
+- On OMAChain Testnet, fund the signer with OMA using the [OMAChain Testnet faucet](https://faucet.testnet.chain.oma3.org/)
 - If the wallet has insufficient balance, submission will fail before the attestation is recorded
 - User review attestations can avoid gas fees on OMAChain by using `submitDelegatedAttestation` (see [Delegated Attestation API](/api/delegated-attestation))
 

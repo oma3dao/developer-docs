@@ -33,6 +33,6 @@ npm install @oma3/omatrust
 ## Learn More
 
 - 📄 [OMATrust Whitepaper](https://github.com/oma3dao/omatrust-docs/blob/main/whitepaper/omatrust-whitepaper.md) — Vision, economics, and the future of internet trust
-- 📋 [OMATrust Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) — Application registry, DID ownership, and metadata formats
-- 🔐 [OMATrust Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md) — Cryptographic proofs for attestations
 - ⭐ [OMATrust Reputation Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md) — Attestation schemas and reputation system
+- 🔐 [OMATrust Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md) — Cryptographic proofs for attestations
+- 📋 [OMATrust Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) — Application registry, DID ownership, and metadata formats

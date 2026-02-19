@@ -1,700 +1,181 @@
 ---
-title: Auditor & Oracle Guide
+title: Issuer Workflow
 ---
 
-# Auditor & Oracle Guide
+# Issuer Workflow
 
-:::caution Draft Documentation
-Attestation issuer processes and authorization are evolving. Contact governance@oma3.org for current requirements and application process.
-:::
-
-Learn how to become an attestation issuer and provide trust services in the OMATrust ecosystem.
+This page covers how to create and submit attestations in the OMATrust reputation system. Whether you're a security auditor issuing assessments, a user writing a review, a witness server anchoring controller observations, or an organization issuing endorsements — the workflow follows the same core pattern.
 
 ## Who Can Issue Attestations?
 
-**Potential issuers:**
-- Security audit firms (Trail of Bits, CertiK, OpenZeppelin, etc.)
-- Compliance certifiers (SOC2, GDPR, HIPAA auditors)
-- Monitoring oracles (uptime, performance tracking)
-- Community moderators (curated lists, quality checks)
-- Automated oracles (OMATrust's own verification system)
+Anyone can create an attestation. However, many attestation types only carry meaningful trust if the attester is recognized by consumers. In practice:
 
-## Becoming an Authorized Issuer
+| Attestation Type | Typical Issuers | Approved Attester Required? |
+|-----------------|-----------------|----------------------------|
+| User Review | End users, platform intermediaries | No — anyone can review |
+| User Review Response | Service operators, authorized delegates | No — but responder coherence is verified |
+| Linked Identifier | The entity controlling both identifiers, or a trusted verifier | No — but proofs are needed for trustless validation |
+| Key Binding | The entity controlling the subject DID | No — but proofs are required |
+| Controller Witness | Witness servers | Yes — consumers maintain witness allowlists |
+| Endorsement | Organizations, trusted entities | Yes — trust depends entirely on attester identity |
+| Certification | Certification Bodies | Yes — must be a recognized CB |
+| Security Assessment | Security auditors, test labs | Yes — must be a recognized assessor |
 
-### Step 1: Build Reputation
+### Becoming an Approved Attester
 
-**Prerequisites:**
-- Established track record in your domain
-- Verifiable credentials or certifications
-- References from previous clients
-- Public portfolio or case studies
+For attestation types where attester identity is the primary trust signal (Controller Witness, Endorsement, Certification, Security Assessment), consumers need to be able to verify who you are. OMA3 will maintain trusted attester lists as a starting point, but anyone can maintain their own. A consumer might trust ISO 27001 certification bodies, SOC 2 auditors, Common Criteria evaluation labs, or FIPS validators — each with their own attester lists independent of OMA3. The system is designed to support multiple competing trust hierarchies, not a single gatekeeper.
 
-**For security auditors:**
-- Past audit reports (with client permission)
-- CVE discoveries
-- Open source contributions
-- Industry certifications (OSCP, CEH, etc.)
+That said, if you want to be on the OMA3-maintained lists specifically:
 
-**For monitoring oracles:**
-- Uptime history
-- API reliability
-- Transparent methodology
+:::note Early Stage Process
+OMA3 is developing a formal Authorized Attester Program with defined criteria and processes for each attestation type. Until that program launches, we're using a lighter-weight process to onboard trusted attesters. Reach out and we'll work with you directly.
+:::
 
-### Step 2: Apply to OMA3 Governance
+1. **Contact OMA3** — Submit an inquiry through the [OMA3 contact form](https://www.oma3.org/#contact) with your organization details, the types of attestations you intend to issue, your verification methodology, and your credentials.
 
-**Submit application:**
-```
-Email: governance@oma3.org
-Subject: Attestation Issuer Application
+2. **Get authorized** — OMA3 evaluates your application based on track record, methodology transparency, and ecosystem alignment. Approved attesters are added to governance-maintained allowlists that consumers can reference.
 
-Include:
-- Organization name
-- Type of attestations you'll issue
-- Verification methodology
-- Reputation/credentials
-- Wallet address for issuer authorization
-- Proposed fee structure (if any)
-```
+3. **Maintain good standing** — Respond to disputes promptly, maintain transparent operations, keep attestations current, and participate in governance discussions.
 
-**Evaluation criteria:**
-- Track record and reputation
-- Methodology transparency
-- Economic sustainability
-- Ecosystem alignment
+This process exists because an endorsement from an unknown entity or a security assessment from an unvetted auditor provides little value to consumers. The attester's identity *is* the trust signal for these attestation types.
 
-### Step 3: Get Authorized
+## Creating an Attestation
 
-**OMA3 admin authorizes your issuer address:**
+You can create attestations programmatically via the SDK, or use the web interface at [reputation.omatrust.org](https://reputation.omatrust.org) if you prefer a visual workflow.
 
-```bash
-npx hardhat resolver-add-issuer \
-  --issuer 0xYourIssuerAddress \
-  --network omachainTestnet
-```
+### 1. Choose the Right Schema
 
-**You'll receive:**
-- Issuer authorization on resolver contract
-- Access to attestation infrastructure
-- Documentation and best practices
-- Initial testnet OMA tokens
+Select the attestation type that matches your use case:
 
-## Issuing Attestations
+- Proving identity linkage? → **Linked Identifier**
+- Authorizing a signing key? → **Key Binding**
+- Witnessing an offchain controller assertion? → **Controller Witness**
+- Reviewing a service as a user? → **User Review**
+- Responding to a review as a service operator? → **User Review Response**
+- Expressing support or approval? → **Endorsement**
+- Certifying compliance with a program? → **Certification**
+- Recording a security evaluation? → **Security Assessment**
 
-### Setup
+### 2. Construct the JSON Payload
 
-**Install dependencies:**
-```bash
-npm install thirdweb ethers dotenv
-```
+Build the attestation object conforming to the schema. All attestations share common fields:
 
-**Create environment:**
-```bash
-# .env
-ISSUER_PRIVATE_KEY=0x...
-THIRDWEB_CLIENT_ID=...
-```
-
-**Or use Thirdweb Managed Vault (production):**
-```bash
-THIRDWEB_SECRET_KEY=...
-THIRDWEB_SERVER_WALLET_ADDRESS=0x...
-```
-
-### Issue DID Ownership Attestation
-
-```typescript
-import { getResolverContract } from './contracts';
-import { prepareContractCall, sendTransaction } from 'thirdweb';
-import { privateKeyToAccount } from 'thirdweb/wallets';
-import { ethers } from 'ethers';
-
-async function attestDIDOwnership(
-  did: string,
-  ownerAddress: string,
-  validityPeriod: number = 31536000 // 1 year in seconds
-) {
-  // 1. Verify ownership (your methodology)
-  const verified = await verifyOwnership(did, ownerAddress);
-  if (!verified) {
-    throw new Error('Ownership verification failed');
-  }
-  
-  // 2. Prepare attestation
-  const resolver = getResolverContract();
-  const didHash = ethers.id(did);
-  const controllerAddress = ethers.zeroPadValue(ownerAddress, 32);
-  const expiresAt = Math.floor(Date.now() / 1000) + validityPeriod;
-  
-  // 3. Sign and submit
-  const issuerAccount = privateKeyToAccount({
-    privateKey: process.env.ISSUER_PRIVATE_KEY
-  });
-  
-  const tx = prepareContractCall({
-    contract: resolver,
-    method: 'function upsertDirect(bytes32, bytes32, uint64)',
-    params: [didHash, controllerAddress, expiresAt]
-  });
-  
-  const result = await sendTransaction({ transaction: tx, account: issuerAccount });
-  
-  console.log(`Attestation issued: ${result.transactionHash}`);
-  return result;
+```json
+{
+  "attester": "did:web:your-organization.com",
+  "subject": "did:web:service-being-attested.com",
+  "issuedAt": 1720000000
 }
 ```
 
-### Issue DataHash Attestation
+Add type-specific fields as defined in [Attestation Types](/reputation/attestation-types). For example, a User Review:
 
-```typescript
-async function attestDataHash(did: string, dataUrl: string, expectedHash: string) {
-  // 1. Fetch data from dataUrl
-  const response = await fetch(dataUrl);
-  const jsonText = await response.text();
-  
-  // 2. Compute hash
-  const computedHash = ethers.id(jsonText); // keccak256
-  
-  // 3. Verify hash matches
-  if (computedHash.toLowerCase() !== expectedHash.toLowerCase()) {
-    throw new Error(`Hash mismatch: expected ${expectedHash}, got ${computedHash}`);
-  }
-  
-  // 4. Issue attestation
-  const resolver = getResolverContract();
-  const didHash = ethers.id(did);
-  
-  const tx = prepareContractCall({
-    contract: resolver,
-    method: 'function attestDataHash(bytes32, bytes32)',
-    params: [didHash, expectedHash]
-  });
-  
-  const issuerAccount = privateKeyToAccount({ privateKey: process.env.ISSUER_PRIVATE_KEY });
-  const result = await sendTransaction({ transaction: tx, account: issuerAccount });
-  
-  return result;
+```json
+{
+  "attester": "did:pkh:eip155:66238:0xReviewerWallet",
+  "subject": "did:web:cool-api.example.com",
+  "ratingValue": 4,
+  "reviewBody": "Fast API responses, good documentation. Minor issues with rate limiting.",
+  "issuedAt": 1720000000
 }
 ```
 
-## Verification Methodologies
+Or a Security Assessment:
 
-### DID:Web Verification
-
-```typescript
-async function verifyDidWeb(did: string, claimedOwner: string): Promise<boolean> {
-  // Extract domain from DID
-  const domain = did.replace('did:web:', '');
-  
-  try {
-    // Fetch DID document
-    const didDoc = await fetch(`https://${domain}/.well-known/did.json`)
-      .then(r => r.json());
-    
-    // Check if claimedOwner in verificationMethod
-    const found = didDoc.verificationMethod?.some((method: any) => {
-      const accountId = method.blockchainAccountId; // Format: eip155:1:0xAddress
-      const address = accountId?.split(':')[2];
-      return address?.toLowerCase() === claimedOwner.toLowerCase();
-    });
-    
-    return found || false;
-  } catch (error) {
-    console.error('DID verification failed:', error);
-    return false;
-  }
+```json
+{
+  "attester": "did:web:security-firm.example.com",
+  "subject": "did:web:defi-protocol.example.com",
+  "version": "2.1.0",
+  "issuedAt": 1720000000,
+  "effectiveAt": 1720000000,
+  "expiresAt": 1751536000,
+  "payload": {
+    "assessmentKind": "security-audit",
+    "outcome": "pass",
+    "metrics": {
+      "critical": 0,
+      "high": 0,
+      "medium": 2,
+      "low": 5,
+      "info": 12
+    },
+    "reportURI": "https://security-firm.example.com/reports/defi-protocol-2025.pdf"
+  },
+  "payloadVersion": "1.0.0"
 }
 ```
 
-### DID:PKH Verification
+### 3. Validate Against the Schema
 
-```typescript
-async function verifyDidPkh(did: string, claimedOwner: string): Promise<boolean> {
-  // Parse DID: did:pkh:eip155:1:0xContractAddress
-  const parts = did.split(':');
-  const chainId = parseInt(parts[3]);
-  const contractAddress = parts[4];
-  
-  // Get RPC for chain
-  const rpc = getRpcForChain(chainId);
-  const provider = new ethers.JsonRpcProvider(rpc);
-  
-  // Create contract instance
-  const contract = new ethers.Contract(
-    contractAddress,
-    ['function owner() view returns (address)'],
-    provider
-  );
-  
-  try {
-    const owner = await contract.owner();
-    return owner.toLowerCase() === claimedOwner.toLowerCase();
-  } catch {
-    // Try admin() if owner() fails
-    try {
-      const adminContract = new ethers.Contract(
-        contractAddress,
-        ['function admin() view returns (address)'],
-        provider
-      );
-      const admin = await adminContract.admin();
-      return admin.toLowerCase() === claimedOwner.toLowerCase();
-    } catch {
-      return false;
-    }
-  }
+Before submitting, validate your JSON against the canonical JSON Schema for the attestation type. The schemas are published in the [OMA3 schema repository](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/tree/main/schemas-json).
+
+This is a hard requirement — implementations must validate before issuing or accepting an attestation.
+
+### 4. Construct Proofs (When Applicable)
+
+Some attestation types require or benefit from proofs. See [Verification Flow](/reputation/verification-flow) for the full proof type reference.
+
+**Key Binding** — At least one proof is required, using `proofPurpose = shared-control`. The proof's Subject must match the attestation's `subject`, and Controller must match `keyId`.
+
+**Linked Identifier** — Proofs are required for proof-based trust. Same binding pattern: Subject = `subject`, Controller = `linkedId`, purpose = `shared-control`.
+
+**User Review** — Proofs are optional but significantly increase trust level:
+- Include an `x402-receipt` if you have one (highest confidence — proves you paid for and received the service)
+- Include a `tx-interaction` proof if you interacted with the service's smart contract
+- Include an `evidence-pointer` if you can demonstrate account existence on the service
+
+Each proof is wrapped in the standard proof wrapper:
+
+```json
+{
+  "proofType": "x402-receipt",
+  "proofPurpose": "commercial-tx",
+  "proofObject": { ... }
 }
 ```
 
-## Batch Attestations
+The `proofObject` format depends on the `proofType` — see the [Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md) for native formats.
 
-### Attest Multiple Services
+### 5. Submit to a Transport
 
-```typescript
-async function batchAttest(services: Array<{did: string, owner: string}>) {
-  for (const service of services) {
-    try {
-      // Verify
-      const verified = await verifyOwnership(service.did, service.owner);
-      
-      if (verified) {
-        // Attest
-        await attestDIDOwnership(service.did, service.owner);
-        console.log(`✅ Attested: ${service.did}`);
-      } else {
-        console.log(`❌ Failed verification: ${service.did}`);
-      }
-      
-      // Rate limit
-      await sleep(1000); // 1 second between attestations
-    } catch (error) {
-      console.error(`Error attesting ${service.did}:`, error.message);
-    }
-  }
-}
-```
+The attestation model is transport-independent. The same JSON payload can be submitted to different systems:
 
-## Monitoring & Automation
+**EAS (Ethereum Attestation Service)** — The primary transport today. Attestations are encoded and submitted on-chain, becoming permanently anchored and publicly queryable.
 
-### Automated Oracle
+**Delegated attestation** — Submit through a relayer that pays gas on your behalf. Useful for end users who don't want to manage gas.
 
-```typescript
-// Continuously monitor and re-attest
-class AutomatedOracle {
-  async monitorAndAttest(did: string, checkInterval: number = 86400000) {
-    setInterval(async () => {
-      try {
-        // Get service
-        const service = await getService(did, 1);
-        
-        // Verify still owned by minter
-        const stillOwned = await verifyOwnership(did, service.minter);
-        
-        if (!stillOwned) {
-          console.warn(`Owner changed for ${did} - revoking attestation`);
-          await revokeAttestation(did);
-          return;
-        }
-        
-        // Verify dataUrl still matches hash
-        const dataIntact = await verifyDataIntegrity(service);
-        
-        if (!dataIntact.valid) {
-          console.warn(`Data tampered for ${did} - revoking`);
-          await revokeAttestation(did);
-          return;
-        }
-        
-        // Re-attest if expiring soon
-        const expiresAt = await getAttestationExpiry(did);
-        const daysUntilExpiry = (expiresAt - Date.now()) / 86400000;
-        
-        if (daysUntilExpiry < 7) {
-          await attestDIDOwnership(did, service.minter);
-          console.log(`Renewed attestation for ${did}`);
-        }
-      } catch (error) {
-        console.error(`Monitoring failed for ${did}:`, error);
-      }
-    }, checkInterval);
-  }
-}
+**Other transports** — The specification supports BAS, centralized systems, and federated indexers. Each transport publishes its own binding rules for how the JSON payload maps to its storage format.
 
-// Start monitoring
-const oracle = new AutomatedOracle();
-oracle.monitorAndAttest('did:web:critical-api.example.com');
-```
+## Revocation
 
-### Uptime Monitoring
+Attesters can revoke their attestations when circumstances change. Revocation makes the attestation inactive — it remains as a historical record but must not be treated as active by consumers.
 
-```typescript
-async function monitorUptime(did: string) {
-  const service = await getService(did, 1);
-  const metadata = await fetchMetadata(service.dataUrl);
-  
-  const endpoint = metadata.endpoints?.[0]?.endpoint || metadata.platforms?.web?.launchUrl;
-  
-  // Ping every minute
-  const uptimeTracker = {
-    total: 0,
-    successful: 0
-  };
-  
-  setInterval(async () => {
-    uptimeTracker.total++;
-    
-    try {
-      const response = await fetch(endpoint, { method: 'HEAD', timeout: 5000 });
-      if (response.ok) {
-        uptimeTracker.successful++;
-      }
-    } catch {
-      // Failed - don't increment successful
-    }
-    
-    // Every hour, issue uptime attestation
-    if (uptimeTracker.total % 60 === 0) {
-      const uptime = (uptimeTracker.successful / uptimeTracker.total) * 100;
-      
-      if (uptime >= 99.5) {
-        await issueUptimeAttestation(did, uptime);
-      }
-    }
-  }, 60000); // 1 minute
-}
-```
+When to revoke:
+- A Linked Identifier relationship no longer holds
+- A Key Binding should be deactivated (key compromised, rotated out)
+- A Security Assessment's findings are no longer accurate
+- A Certification's requirements are no longer met
+- A User Review was issued in error
 
-## Economic Model
+Linked Identifier and Key Binding attestations **must** be revocable. Consumers are required to reject any such attestation that isn't revocable on the transport.
 
-### Issuer Revenue
+## Supersession
 
-**Potential income streams:**
-
-1. **Service Fees:**
-   - Security audits: $10k-$50k per contract
-   - Compliance certifications: $5k-$20k annually
-   - Performance monitoring: $100-$1000/month
-
-2. **Attestation Fees:**
-   - Charge for issuing attestations
-   - Subscription for continuous monitoring
-   - Premium: expedited verification
-
-3. **Data Licensing:**
-   - Sell aggregated trust data
-   - API access to attestation database
-   - Analytics and insights
-
-### Cost Structure
-
-**Gas costs:**
-- Attestation: ~50k-100k gas
-- At 1 gwei: ~$0.01-0.02 per attestation
-- Subsidized on OMAchain (future)
-
-**Operational costs:**
-- Infrastructure (monitoring, APIs)
-- Staff (auditors, reviewers)
-- Insurance (errors & omissions)
+For User Reviews, the update mechanism is supersession rather than revocation. To update a review, issue a new User Review attestation for the same subject. Consumers must consider only the most recent attestation (by `issuedAt`) from a given attester for a given subject.
 
 ## Best Practices
 
-### 1. Methodology Transparency
+- **Validate against the schema** before submitting — malformed attestations will be rejected by compliant consumers
+- **Set appropriate expiration dates** — Security assessments and certifications should expire; a two-year-old audit is stale
+- **Include proofs where possible** — Proofs enable trustless verification and increase the trust level of your attestation
+- **Document your methodology** — For security assessments and certifications, transparency about your process builds consumer confidence
+- **Use `effectiveAt` strategically** — If you need a Controller Witness to be issued before your attestation becomes active, set `effectiveAt` in the future to give the witness time to observe and attest
+- **Revoke promptly** — If an attestation is no longer accurate, revoke it. Stale attestations erode trust in the system
 
-**Document your process:**
-```markdown
-# Our Verification Methodology
+## Further Reading
 
-## DID:Web Verification
-1. Fetch DID document from domain
-2. Validate JSON-LD structure
-3. Check wallet address in verificationMethod
-4. Verify SSL certificate validity
-5. Check domain registration age (>90 days preferred)
-
-## DataHash Verification
-1. Fetch JSON from dataUrl
-2. Compute keccak256 hash
-3. Compare with on-chain hash
-4. Verify content hasn't changed in 24 hours
-5. Issue attestation if stable
-```
-
-### 2. Consistent Standards
-
-**Use same criteria for all:**
-- Don't favor certain clients
-- Document exceptions
-- Publish rejection criteria
-- Be transparent about limitations
-
-### 3. Timely Updates
-
-**Expiration management:**
-- Set appropriate expiration dates
-- Renew before expiry
-- Revoke if issues detected
-- Notify affected parties
-
-### 4. Dispute Resolution
-
-**Handle challenges:**
-```typescript
-interface DisputeProcess {
-  report: (did: string, issue: string) => Promise<void>;
-  investigate: (disputeId: string) => Promise<InvestigationResult>;
-  resolve: (disputeId: string, resolution: Resolution) => Promise<void>;
-}
-
-// Example
-async function handleDispute(did: string, issue: string) {
-  // 1. Suspend attestation pending investigation
-  await suspendAttestation(did);
-  
-  // 2. Investigate
-  const finding = await investigate(did, issue);
-  
-  // 3. Resolve
-  if (finding.valid) {
-    await restoreAttestation(did);
-  } else {
-    await revokeAttestation(did);
-  }
-  
-  // 4. Publish resolution
-  await publishResolution(did, finding);
-}
-```
-
-## Tools & Infrastructure
-
-### Attestation Dashboard
-
-```typescript
-// Monitor your issued attestations
-async function getIssuerDashboard(issuerAddress: string) {
-  const attestations = await queryAttestationsByIssuer(issuerAddress);
-  
-  return {
-    total: attestations.length,
-    active: attestations.filter(a => !a.expired).length,
-    expiringSoon: attestations.filter(a => 
-      a.expiresAt - Date.now() < 7 * 86400000
-    ).length,
-    revoked: attestations.filter(a => a.revoked).length,
-    
-    byType: groupBy(attestations, 'type'),
-    recentActivity: attestations.slice(0, 10)
-  };
-}
-```
-
-### Automated Verification Pipeline
-
-```typescript
-class VerificationPipeline {
-  async processQueue() {
-    const pending = await this.getPendingVerifications();
-    
-    for (const request of pending) {
-      try {
-        // Run verification checks
-        const result = await this.verify(request);
-        
-        if (result.passed) {
-          // Issue attestation
-          await this.attest(request.did, request.owner);
-          await this.notifyRequester(request, 'approved');
-        } else {
-          // Reject
-          await this.notifyRequester(request, 'rejected', result.reason);
-        }
-      } catch (error) {
-        await this.logError(request, error);
-      }
-    }
-  }
-  
-  async verify(request: VerificationRequest) {
-    // Your verification logic
-    const checks = [
-      this.checkDIDDocument(request.did),
-      this.checkDomainAge(request.did),
-      this.checkSSLCertificate(request.did),
-      this.checkNoMaliciousHistory(request.owner)
-    ];
-    
-    const results = await Promise.all(checks);
-    const passed = results.every(r => r.success);
-    
-    return {
-      passed,
-      reason: passed ? null : results.find(r => !r.success)?.reason,
-      checks: results
-    };
-  }
-}
-```
-
-## Revenue Examples
-
-### Security Audit Firm
-
-**Attestation service:**
-```
-Base audit: $15,000
-└─ Includes:
-   - Code review
-   - Penetration testing
-   - Report delivery
-   - On-chain attestation issuance
-   - 1 year validity
-
-Premium audit: $30,000
-└─ Includes all above plus:
-   - Continuous monitoring
-   - Monthly re-attestation
-   - Priority support
-   - Public report publication
-```
-
-**Annual revenue (50 audits):**
-- Audits: $750k - $1.5M
-- Monitoring subscriptions: $100k
-- Total: $850k - $1.6M
-
-### Uptime Oracle
-
-**Pricing:**
-```
-Free tier:
-- Hourly checks
-- 30-day attestations
-- Public data only
-
-Pro tier: $50/month
-- Minute-by-minute checks
-- Real-time attestations
-- Private dashboards
-- SLA guarantees
-
-Enterprise: $500/month
-- Second-by-second monitoring
-- Multi-region checks
-- Custom attestation schemas
-- Dedicated support
-```
-
-**Annual revenue (100 pro + 10 enterprise customers):**
-- Pro: $60k
-- Enterprise: $60k
-- Total: $120k
-
-### Compliance Certifier
-
-**Services:**
-```
-GDPR Compliance: $8,000
-└─ Assessment, attestation, annual renewal
-
-SOC2 Type II: $15,000
-└─ Full audit, attestation, quarterly reviews
-
-HIPAA Compliance: $12,000
-└─ Healthcare-specific review, attestation
-```
-
-## Liability & Insurance
-
-### Errors & Omissions Insurance
-
-**Coverage needed:**
-- False positive attestations (attesting insecure service)
-- False negative attestations (rejecting legitimate service)
-- Methodology errors
-- Infrastructure failures
-
-**Typical coverage:** $1M-$5M per incident
-
-### Risk Mitigation
-
-```typescript
-// Document every verification
-interface VerificationRecord {
-  did: string;
-  timestamp: number;
-  methodology: string;
-  checksPerformed: string[];
-  evidence: any[];
-  auditor: string;
-  result: 'passed' | 'failed';
-  reason?: string;
-}
-
-async function documentVerification(did: string, result: any) {
-  const record: VerificationRecord = {
-    did,
-    timestamp: Date.now(),
-    methodology: 'DIDWebVerificationV1',
-    checksPerformed: [
-      'DID document fetch',
-      'Wallet address verification',
-      'SSL certificate check',
-      'Domain age check'
-    ],
-    evidence: [
-      { type: 'did-document', data: result.didDoc },
-      { type: 'ssl-cert', data: result.sslCert },
-      { type: 'whois', data: result.whois }
-    ],
-    auditor: process.env.ISSUER_ADDRESS,
-    result: result.passed ? 'passed' : 'failed',
-    reason: result.reason
-  };
-  
-  // Store permanently
-  await database.saveVerificationRecord(record);
-  
-  // Optional: Store IPFS hash on-chain for tamper-resistance
-  const recordHash = await uploadToIPFS(record);
-  await logVerificationHash(did, recordHash);
-}
-```
-
-## Governance & Updates
-
-### Methodology Updates
-
-**When changing verification process:**
-```
-1. Publish updated methodology
-2. Version it (v1 → v2)
-3. Notify OMA3 governance
-4. Re-verify existing attestations if needed
-5. Update documentation
-```
-
-### Issuer Status
-
-**Maintaining good standing:**
-- Respond to disputes within 48 hours
-- Maintain less than 1% false positive rate
-- Keep attestations current (renew before expiry)
-- Participate in governance discussions
-- Transparent operations
-
-**Removal conditions:**
-- Repeated false attestations
-- Failure to handle disputes
-- Malicious behavior
-- Inactivity (>6 months)
-
-## Next Steps
-
-- **[Client Guide](/reputation/consumer-workflow)** - Query attestations you issued
-- **[Cookbooks](/app-registry/cookbooks/register-website)** - Understand what you're attesting
-- **[Attestations Framework](/reputation/attestation-types)** - Technical details
-
----
-
-**Ready to become an attestation issuer?** Contact governance@oma3.org to apply.
-
+- [Attestation Types](/reputation/attestation-types) — Schema definitions for each type
+- [Verification Flow](/reputation/verification-flow) — How consumers verify your attestations
+- [Consumer Workflow](/reputation/consumer-workflow) — How consumers query and interpret attestations
+- [OMATrust Reputation Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md) — Formal definitions

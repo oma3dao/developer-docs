@@ -22,6 +22,33 @@ For the full function reference with types and error codes, see the [Reputation 
 
 For end-to-end proof workflow guides (tx-encoded-value, DNS TXT, DID document, X.402 receipts, linked identifiers), see the [Attestations Guide](/reputation/attestation-types) and the [OMATrust Specification](https://github.com/oma3dao/omatrust-docs/specification).
 
+## Quick Verification
+
+If you just want to verify an attestation and check its proofs, here's the shortest path:
+
+```ts
+import {
+  getAttestation,
+  verifyAttestation,
+} from "@oma3/omatrust/reputation";
+
+// Fetch and verify in two calls
+const attestation = await getAttestation({ uid, provider, easContractAddress, schema });
+const result = await verifyAttestation({ attestation, provider });
+
+if (result.valid) {
+  // Attestation is structurally valid, not revoked/expired, and all proofs check out
+  console.log("Verified:", attestation.data.subject);
+} else {
+  // result.reasons tells you what failed
+  console.log("Failed:", result.reasons);
+}
+```
+
+`verifyAttestation` handles structural validation, lifecycle checks (expiration, revocation), and cryptographic proof verification for all supported proof types. For most consumers, this is all you need.
+
+For a deep dive into what's happening under the hood — proof types, binding rules, trust models, and manual verification logic — see the [Verification Flow](/reputation/verification-flow).
+
 ## Core Functions
 
 ```ts

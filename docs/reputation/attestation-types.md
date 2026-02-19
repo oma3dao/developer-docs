@@ -4,158 +4,156 @@ title: Attestation Types
 
 # Attestation Types
 
-OMATrust defines structured EAS schemas for different attestation purposes. Each schema is registered on-chain and has a canonical JSON Schema definition in the [rep-attestation-tools repository](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/tree/main/schemas-json).
+OMATrust defines structured schemas for different attestation purposes. Each schema uses JSON Schema Draft 2020-12 as the canonical definition and is published in the [OMA3 schema repository](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/tree/main/schemas-json).
 
-All attestation types share common patterns:
-- `attester` — DID of the entity making the attestation (populated by EAS from the signer)
-- `subject` — DID of the entity being attested about
-- `issuedAt` — Unix timestamp when the attestation was created
-- Timestamps use Unix seconds format
+:::note Normative Source of Truth
+These developer docs are a guide — not the specification. OMA3 is a standards body, and the normative definitions for all attestation schemas, proof types, and verification rules live in the [OMATrust Reputation Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md) and [OMATrust Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md). If anything on this page conflicts with the specifications, the specifications govern. For canonical field definitions, refer to the [JSON schema files](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/tree/main/schemas-json) directly.
+:::
 
-For the formal schema definitions and proof integration, see the [Reputation Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md) and [Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md).
+All attestation types share common patterns: an `attester` DID, a `subject` DID, and an `issuedAt` timestamp. Attestations should be validated against the schema before issuance or acceptance — in practice, the SDK and transport layer (e.g., EAS) handle much of this automatically.
 
----
-
-## Key Binding
-
-Binds a cryptographic key to a DID. Supports multi-purpose bindings, rotation, and revocation.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | Yes | DID to which this key is bound |
-| `keyId` | DID | Yes | DID representing the key (`did:key`, `did:pkh`, or `did:web`) |
-| `publicKeyJwk` | object | Conditional | JWK-formatted public key. Required unless `keyId` is self-certifying (`did:key` or `did:pkh:eip155`) |
-| `keyPurpose` | string[] | Yes | Permitted purposes: `authentication`, `assertionMethod`, `keyAgreement`, `capabilityInvocation`, `capabilityDelegation` |
-| `proofs` | Proof[] | Yes | Cryptographic proofs demonstrating control. Use `proofPurpose: 'shared-control'` |
-| `issuedAt` | integer | Yes | Unix timestamp |
-| `effectiveAt` | integer | No | When the binding becomes effective |
-| `expiresAt` | integer | No | When the binding expires |
-
-Key Binding attestations support the [Controller Witness](/api/controller-witness) flow — after publishing a Key Binding, a witness server can observe the offchain controller assertion and anchor it permanently.
+Attestations are organized into two layers: **Support Attestations** that establish identity relationships, and **Reputation Attestations** that carry the actual trust signals.
 
 ---
 
-## Controller Witness
+## Support Attestations
 
-A witness attestation anchoring that, at a specific time, the controller of a subject DID was asserted via a mutable offchain method (DNS TXT or DID document). The witness identity is the EAS attester address.
+Support Attestations define the foundational relationships that allow [consumers](/start-here/definitions#common-terms) to reason about who controls which identifiers, which keys are authorized to sign for a service, and how identities across different systems are linked. Reputation Attestations depend on these to verify signatures and resolve service operators.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | Yes | The DID identity (typically `did:web`) of the entity authorizing the controller |
-| `controller` | DID | Yes | The controller identity (`did:pkh`, `did:key`, or `did:handle`) |
-| `method` | enum | Yes | How the witness observed the assertion: `dns-txt`, `did-json`, `social-profile`, or `manual` |
-| `observedAt` | integer | Yes | Unix timestamp when the witness observed the controller assertion |
+### Linked Identifier
 
-See the [Controller Witness API](/api/controller-witness) for the full verification flow.
+Asserts that a subject DID and a linked DID are controlled by the same entity. This is the general-purpose identity linkage mechanism — use it when you need to prove "these two identifiers belong to the same entity."
 
----
+The `subject` should be the primary, canonical identity (e.g., an organizational `did:web` or an immutable `did:pkh` for a smart contract). The `linkedId` should be the identifier with higher rotation frequency (e.g., a signing key's `did:pkh`, or a social handle via `did:handle`).
 
-## Linked Identifier
+Key behaviors:
+- Proofs are required for proof-based trust, using `proofPurpose = shared-control`
+- Permitted proof types: `pop-eip712`, `pop-jws`, `tx-encoded-value`, `evidence-pointer`
+- Linked Identifier attestations **must be revocable** — consumers must reject any that aren't
 
-Asserts that a subject controls a linked identifier, creating a symmetric DID-to-DID link. A trusted third party (the attester) verifies the linkage.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | Yes | DID initiating the link (`did:pkh`, `did:web`, `did:handle`, `did:key`) |
-| `linkedId` | DID | Yes | DID being linked to (`did:handle`, `did:web`, `did:pkh`, `did:key`) |
-| `method` | string | Yes | Verification method: `proof`, `http-file`, `dns-txt`, `email-challenge`, `social-post`, `manual`, `oauth` |
-| `proofs` | Proof[] | Conditional | Required when `method` is `proof`. Cryptographic proofs of control. Use `proofPurpose: 'shared-control'` |
-| `issuedAt` | integer | Yes | Unix timestamp |
-| `effectiveAt` | integer | No | When the link becomes effective |
-| `expiresAt` | integer | No | When the link expires |
-
-Supported `did:handle` platforms include Twitter, GitHub, Discord, Telegram, Lens, and Farcaster.
+Schema: [linked-identifier.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/linked-identifier.schema.json) · Spec: [Reputation Specification §6.1](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
 
 ---
 
-## User Review
+### Key Binding
 
-A structured 1–5 star review of a service or application. Designed for on-chain attestation with optional proof-of-interaction.
+Declares that a specific cryptographic public key is authorized to act on behalf of a subject DID. Unlike Linked Identifiers (which link abstract identifiers), Key Binding links the raw cryptographic material needed for digital signatures. It also provides lifecycle management: publication, rotation, expiration, and revocation.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | Yes | DID of the service being reviewed |
-| `version` | string | No | Version of the reviewed subject |
-| `ratingValue` | integer | Yes | Rating from 1 (worst) to 5 (best) |
-| `reviewBody` | string | No | Free-form text (max 500 chars) |
-| `screenshotUrls` | string[] | No | Up to 10 screenshot URLs |
-| `proofs` | Proof[] | Yes | Proofs demonstrating the reviewer used the service. Use `proofPurpose: 'commercial-tx'` for x402-based proof of interaction |
+The `keyPurpose` field specifies what the key is authorized to do, using values from [W3C DID Core Verification Relationships](https://www.w3.org/TR/did-core/#verification-relationships): `authentication`, `assertionMethod`, `keyAgreement`, `capabilityInvocation`, `capabilityDelegation`.
 
-User reviews with x402 signed receipts as proofs provide verifiable evidence that the reviewer actually transacted with the service. See the [x402 Integration](/integrations/x402-integration) for details.
+Key behaviors:
+- At least one proof is required, using `proofPurpose = shared-control`
+- Permitted proof types: `pop-eip712`, `pop-jws`, `tx-encoded-value`, `evidence-pointer`
+- Multiple non-expired, non-revoked bindings can coexist (key rotation doesn't implicitly revoke earlier bindings)
+- Key Binding attestations **must be revocable** — consumers must reject any that aren't
 
----
-
-## User Review Response
-
-A response from a service owner or representative to a User Review attestation. References the original review via `refUID`.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | No | DID of the original reviewer being responded to |
-| `refUID` | string | Yes | The EAS UID of the User Review being responded to |
-| `responseBody` | string | Yes | Free-form response text (max 500 chars) |
-| `issuedAt` | integer | Yes | Unix timestamp |
+Schema: [key-binding.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/key-binding.schema.json) · Spec: [Reputation Specification §6.2](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
 
 ---
 
-## Security Assessment
+### Controller Witness
 
-Records a security assessment (pentest, audit, code review, vulnerability scan) on-chain.
+A third-party witness attestation that anchors a timestamped observation: at a specific time, a subject DID asserted a particular controller via mutable offchain state (DNS TXT record, DID document, social profile). This solves a real problem — offchain evidence can be removed or altered after the fact, so a witness creates an immutable on-chain record of what was observed.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | Yes | DID of the assessed service or contract |
-| `organization` | DID | No | Parent organization DID (when assessing a sub-resource) |
-| `version` | string | No | Software version assessed |
-| `payload` | object | Yes | Assessment details (see below) |
-| `payloadVersion` | string | Yes | Version of the payload schema |
-| `issuedAt` | integer | Yes | Unix timestamp |
-| `effectiveAt` | integer | No | When the assessment becomes effective |
-| `expiresAt` | integer | No | When the assessment expires |
+Key behaviors:
+- No proofs — trust derives from the identity and credibility of the witness [attester](/start-here/definitions#common-terms)
+- Observation methods: `dns-txt`, `did-json`, `social-profile`, `manual`
+- Consumers can use these in temporal proof mode (witness observation must predate the related attestation) or common-control mode (observation proves the assertion existed at some point)
 
-The `payload` object contains:
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `assessmentKind` | string | Yes | Category: `pentest`, `security-audit`, `code-review`, `vulnerability-scan` |
-| `reportURI` | string | No | URL to the human-readable report |
-| `reportDigest` | object | No | Hash of the report for integrity verification |
-| `outcome` | object | No | Assessment outcome |
-| `metrics` | object | No | Finding counts by severity (critical, high, medium, low, info) |
+Schema: [controller-witness.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/controller-witness.schema.json) · Spec: [Reputation Specification §6.3](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
 
 ---
 
-## Certification
+## Reputation Attestations
 
-Issued by certification bodies when a subject passes a certification program.
+These are the trust signals that consumers use to evaluate services.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | Yes | DID of the entity being certified |
-| `organization` | DID | No | Parent organization DID |
-| `programID` | DID | Yes | DID of the certification program (version included in DID) |
-| `assessor` | DID | Yes | DID of the authorized assessor or test lab |
-| `version` | string | No | Software version certified |
-| `certificationLevel` | string | No | Classification level (e.g., "Gold", "Level 2") |
-| `outcome` | object | No | Certification outcome |
-| `reportURI` | string | No | URL to the certification report |
-| `reportDigest` | object | No | Hash of the report |
-| `issuedAt` | integer | Yes | Unix timestamp |
-| `effectiveAt` | integer | No | When the certification becomes effective |
-| `expiresAt` | integer | No | When the certification expires |
+### User Review
+
+A structured 1–5 star review of a service or application. User Reviews are the primary mechanism for end-user feedback in OMATrust.
+
+Proofs are optional but significantly affect trust level. User Reviews support two categories of evidence:
+
+| Proof Category | proofPurpose | What It Proves | Allowed Proof Types |
+|----------------|-------------|----------------|---------------------|
+| Commercial transaction | `commercial-tx` | The reviewer transacted with the service | `x402-receipt` |
+| Transaction interaction | `commercial-tx` | The reviewer interacted with the service's smart contract | `tx-interaction` |
+| User account existence | `shared-control` | The reviewer has an account on the service | `evidence-pointer` |
+
+A review with a valid `x402-receipt` (or `x402 offer`, which carries a different meaning) proof is an example of a user review providing the strongest evidence — it proves the reviewer paid for and received the service. A review without proofs is still valid but carries lower confidence.
+
+Key behaviors:
+- Attestations are immutable — to update a review, issue a new one for the same subject. Consumers must consider only the most recent from a given attester for a given subject.
+- `ratingValue` ranges from 1 (worst) to 5 (best)
+- `reviewBody` is optional, max 500 characters
+
+Schema: [user-review.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/user-review.schema.json) · Spec: [Reputation Specification §7.1](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
 
 ---
 
-## Endorsement
+### User Review Response
 
-A lightweight attestation indicating support, trust, or approval for a subject.
+A response from a service operator to a specific User Review. This is how service owners acknowledge, rebut, clarify, or resolve feedback. Linked to the original review via `refUID`.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | DID | Yes | DID of the entity being endorsed |
-| `organization` | DID | No | Parent organization DID |
-| `version` | string | No | Version of the endorsed subject |
-| `policyURI` | string | No | URI to the criteria or process used for formal approvals |
-| `issuedAt` | integer | No | Unix timestamp |
-| `effectiveAt` | integer | No | When the endorsement becomes effective |
-| `expiresAt` | integer | No | When the endorsement expires |
+Key behaviors:
+- The response `attester` should be the reviewed service or a verifiable delegate (established via Support Attestations)
+- `refUID` must resolve to a valid User Review attestation
+- Does not carry proofs — verification is based on reference resolution and responder coherence
+
+Schema: [user-review-response.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/user-review-response.schema.json) · Spec: [Reputation Specification §7.2](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
+
+---
+
+### Endorsement
+
+A lightweight signal indicating that an attester supports, trusts, approves, or recognizes a subject. Endorsements are intentionally minimal so they can be issued frequently and interpreted flexibly.
+
+Endorsements are purely an attester-trust attestation — they carry no proofs. An endorsement is only as meaningful as the entity that issued it. If you trust the attester (e.g., OMA3 endorsing a member service), the endorsement carries weight. If you don't recognize the attester, it's just a claim.
+
+Key behaviors:
+- No proofs — trust depends entirely on whether the consumer trusts the attester (directly or via delegated trust through Support Attestations)
+- Optional `policyUri` references the criteria used for formal approvals
+- Supports the [payload container](#payload-container) pattern for evolvable details
+
+Schema: [endorsement.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/endorsement.schema.json) · Spec: [Reputation Specification §7.3](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
+
+---
+
+### Certification
+
+A formal decision by a Certification Body (CB) that a subject has satisfied the requirements of a specific certification program. Certifications follow a three-party flow:
+
+1. An **assessor** (test lab, auditor) evaluates the subject
+2. The **Certification Body** receives the assessment data and makes the certification decision
+3. If positive, the CB issues the Certification attestation as the `attester`
+
+Key behaviors:
+- No proofs — trust depends on whether the consumer trusts the Certification Body
+- Includes `programID` (DID of the certification program) and `assessor` (DID of the evaluating entity)
+- Optional `certificationLevel` for classification (e.g., "Gold", "Level 2")
+- Supports the [payload container](#payload-container) pattern
+
+Schema: [certification.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/certification.schema.json) · Spec: [Reputation Specification §7.4](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
+
+---
+
+### Security Assessment
+
+Records the results of a security evaluation performed by an assessor over a subject. Designed as a thin envelope — most methodological detail, evidence, and results are carried in the payload.
+
+The default payload includes `assessmentKind` (`pentest`, `security-audit`, `code-review`, or `vulnerability-scan`), optional `outcome` (`pass` or `fail` — absent means `pass`), optional `metrics` (finding counts by severity), and optional `reportURI`/`reportDigest` for linking to the full report.
+
+Key behaviors:
+- No proofs — trust depends on whether the consumer trusts the assessor
+- Supports the [payload container](#payload-container) pattern — if `payloadSpecURI` is present, the payload is interpreted using the referenced specification instead of the default structure
+- If `reportURI` and `reportDigest` are both present, consumers can fetch and verify report integrity
+
+Schema: [security-assessment.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/security-assessment.schema.json) · Spec: [Reputation Specification §7.5](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
+
+---
+
+## Payload Container
+
+Several attestation types (Endorsement, Certification, Security Assessment) use a shared payload pattern for carrying evolvable details. The payload object's internal structure is attestation-specific. If `payloadSpecURI` is absent, the payload is interpreted using the default structure defined in the schema. If present, the referenced specification takes precedence.
+
+Spec: [Reputation Specification §8](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)

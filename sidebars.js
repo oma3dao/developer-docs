@@ -5,6 +5,7 @@ const sidebars = {
       label: 'Start Here',
       items: [
         'start-here/overview',
+        'start-here/definitions',
         'start-here/quickstart-publish',
         'start-here/quickstart-verify',
       ],
@@ -20,7 +21,7 @@ const sidebars = {
           label: 'Attestation Types',
         },
         'reputation/verification-flow',
-        // 'reputation/trust-scoring', // Hidden — see GitHub issue
+        'reputation/trust-scoring',
         {
           type: 'doc',
           id: 'reputation/issuer-workflow',
@@ -82,74 +83,54 @@ const sidebars = {
       type: 'category',
       label: 'Integrations',
       items: [
-        {
-          type: 'category',
-          label: 'X402 Integration',
-          items: [
-            'integrations/x402-integration',
-            {
-              type: 'doc',
-              id: 'integrations/x402-extensions',
-              label: 'X402 Extensions (in review)',
-            },
-          ],
-        },
-        {
-          type: 'category',
-          label: 'ERC8004 Integration',
-          items: [
-            {
-              type: 'doc',
-              id: 'integrations/erc8004-integration',
-              label: 'ERC8004 Integration',
-            },
-            {
-              type: 'doc',
-              id: 'integrations/erc8004-extensions',
-              label: 'ERC8004 Extensions (in development)',
-            },
-          ],
-        },
+        'integrations/x402-integration',
+        'integrations/erc8004-integration',
       ],
     },
-    {
-      type: 'category',
-      label: 'App Registry (Preview)',
-      items: [
-        'app-registry/overview',
-        'app-registry/status',
-        {
-          type: 'doc',
-          id: 'app-registry/erc8004-compatibility',
-          label: 'ERC-8004 compatibility and extensions',
-        },
-        {
-          type: 'doc',
-          id: 'app-registry/registry-concepts',
-          label: 'Registry Concepts',
-        },
-        'app-registry/deduplication-model',
-        'app-registry/migration-path',
-        'app-registry/registration-guide',
-        {
-          type: 'category',
-          label: 'Cookbooks',
-          items: [
-            'app-registry/cookbooks/register-website',
-            'app-registry/cookbooks/register-api',
-            'app-registry/cookbooks/register-mcp-server',
-            'app-registry/cookbooks/register-a2a-agent',
-            'app-registry/cookbooks/register-smart-contract',
-          ],
-        },
-        {
-          type: 'doc',
-          id: 'app-registry/registry-sdk-reference',
-          label: 'Registry SDK Reference',
-        },
-        'app-registry/cloudinary-guide',
-      ],
-    },
+    // App Registry — hidden, see GitHub issue #XX: Refine App Registry docs and re-publish
+    // {
+    //   type: 'category',
+    //   label: 'App Registry (Preview)',
+    //   items: [
+    //     'app-registry/overview',
+    //     'app-registry/status',
+    //     {
+    //       type: 'doc',
+    //       id: 'app-registry/erc8004-compatibility',
+    //       label: 'ERC-8004 compatibility and extensions',
+    //     },
+    //     {
+    //       type: 'doc',
+    //       id: 'app-registry/registry-concepts',
+    //       label: 'Registry Concepts',
+    //     },
+    //     'app-registry/deduplication-model',
+    //     'app-registry/migration-path',
+    //     'app-registry/registration-guide',
+    //     {
+    //       type: 'category',
+    //       label: 'Cookbooks',
+    //       items: [
+    //         'app-registry/cookbooks/register-website',
+    //         'app-registry/cookbooks/register-api',
+    //         'app-registry/cookbooks/register-mcp-server',
+    //         'app-registry/cookbooks/register-a2a-agent',
+    //         'app-registry/cookbooks/register-smart-contract',
+    //       ],
+    //     },
+    //     {
+    //       type: 'doc',
+    //       id: 'app-registry/integration-examples',
+    //       label: 'Integration Code Examples',
+    //     },
+    //     {
+    //       type: 'doc',
+    //       id: 'app-registry/registry-sdk-reference',
+    //       label: 'Registry SDK Reference',
+    //     },
+    //     'app-registry/cloudinary-guide',
+    //   ],
+    // },
     // Chain Architecture — hidden, see GitHub issue
     // {
     //   type: 'category',

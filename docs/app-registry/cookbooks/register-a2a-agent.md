@@ -241,8 +241,8 @@ async function contactAgent(targetDid: string, message: any) {
   
   // 2. Verify agent before trusting
   const verified = await verifyServiceCompletely(targetDid, 1);
-  if (verified.trustScore < 70) {
-    throw new Error('Agent trust score too low');
+  if (!verified.ownerVerified) {
+    throw new Error('Agent not verified');
   }
   
   // 3. Fetch agent card

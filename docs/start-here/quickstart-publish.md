@@ -4,7 +4,7 @@ title: "Quickstart: Publish Attestation"
 
 # Quickstart: Publish Attestation
 
-Submit a verifiable attestation to EAS in under 5 minutes.
+Submit a verifiable attestation to EAS.
 
 ## 1. Install
 
@@ -16,7 +16,7 @@ npm install @oma3/omatrust ethers @ethereum-attestation-service/eas-sdk
 
 The signing wallet needs native gas tokens on the target chain to pay transaction fees.
 
-- On OMAChain Testnet, fund the signer with OMA
+- On OMAChain Testnet, fund the signer with OMA using the [OMAChain Testnet faucet](https://faucet.testnet.chain.oma3.org/)
 - To avoid gas fees, use `submitDelegatedAttestation` instead (see [Delegated Attestation API](/api/delegated-attestation))
 
 ## 3. Submit an Attestation
@@ -45,7 +45,7 @@ console.log(result.uid);     // attestation UID
 console.log(result.txHash);  // transaction hash
 ```
 
-## 4. Confirm It On-Chain
+## 4. Confirm It Onchain
 
 ```ts
 import { getAttestation } from "@oma3/omatrust/reputation";

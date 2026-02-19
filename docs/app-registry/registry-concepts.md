@@ -7,13 +7,13 @@ This App Registry documentation is in preview and is not production-ready.
 :::
 
 
-# OMATrust Technical Architecture
+# App Registry Technical Architecture
 
 :::caution Draft Documentation
 This documentation is in **draft format** and under active development. Technical details may change as the protocol evolves. For the latest updates, see the [GitHub repository](https://github.com/oma3dao).
 :::
 
-This document explains how OMATrust works under the hood: the smart contracts, data structures, and verification mechanisms that power the decentralized trust layer.
+This document explains how the App Registry works under the hood: the smart contracts, data structures, and verification mechanisms that power service registration and identity.
 
 ## System Components
 
@@ -88,37 +88,9 @@ function checkDataHashAttestation(bytes32 didHash, bytes32 dataHash) view return
 3. Oracle writes attestation to resolver
 4. Clients query resolver for proof
 
-### 4. EAS Framework
-
-**Contracts:** `EAS.sol`, `SchemaRegistry.sol`  
-**Purpose:** Structured attestations for reputation, certifications, and security assessments
-
-**Integration:**
-OMATrust uses the Ethereum Attestation Service (EAS) for structured attestations beyond basic DID ownership verification. EAS provides a standardized framework for creating, querying, and managing on-chain attestations with custom schemas.
-
-**Core Components:**
-- **Schema Registry** - Register custom attestation schemas
-- **EAS Contract** - Issue and manage attestations following registered schemas
-
-**Supported Attestation Types:**
-- **Certification** - Compliance and certification attestations
-- **Endorsement** - Trust and approval attestations
-- **Security Assessment** - Security audit and vulnerability assessment attestations
-- **User Review** - Community feedback and ratings (1-5 stars) with optional cryptographic proofs
-- **User Review Response** - Responses from app owners to user reviews
-
-**Key Features:**
-- Schema-based attestations with structured data
-- Cryptographic proofs - Attestations can include cryptographic proofs that validate specific claims (e.g., proof of service usage for user reviews)
-- Revocable attestations (when configured)
-- Cross-chain attestation support
-- Standardized query interface for clients
-
-**Deployment:**
-```
-EAS:       0x8835AF90f1537777F52E482C8630cE4e947eCa32
-Schema Registry: 0x7946127D2f517c8584FdBF801b82F54436EC6FC7
-```
+:::info Reputation & Attestations
+The App Registry integrates with the broader OMATrust Reputation System for structured attestations (certifications, endorsements, reviews, etc.) via the Ethereum Attestation Service (EAS). See the [Attestation Framework](/reputation/attestation-types) documentation for details on attestation types, schemas, and the EAS integration.
+:::
 
 ## Data Model
 
@@ -340,8 +312,6 @@ All interfaces: interfaces = 7
 Registry:  0x63A7C12f54B4f42Cae7234f7e20c7A08f725B9F9
 Metadata:  0xFdd87eA429D963eCB671D409128dC94BFf5f0694
 Resolver:  0x77E058106762AeA4A567f2919Ef896bb6A82f914
-EAS:       0x8835AF90f1537777F52E482C8630cE4e947eCa32
-Schema Registry: 0x7946127D2f517c8584FdBF801b82F54436EC6FC7
 ```
 
 ### Mainnet (Planned)
@@ -363,8 +333,6 @@ Schema Registry: 0x7946127D2f517c8584FdBF801b82F54436EC6FC7
 **What's verified on-chain:**
 - ✅ DID ownership (via resolver attestation)
 - ✅ DataHash integrity (hash comparison with JCS canonicalization)
-- ✅ Attestation signatures (EAS standard)
-- ✅ Attestation quality (cryptographic proofs validate claims)
 
 **What's NOT verified:**
 - ❌ Off-chain metadata content (you must trust dataUrl host)
@@ -372,11 +340,8 @@ Schema Registry: 0x7946127D2f517c8584FdBF801b82F54436EC6FC7
 ### Mitigation Strategies
 
 1. **DataHash verification** - Detect tampering using JCS-canonicalized hashes
-2. **Issuer reputation** - Track issuer/attester reliability
-3. **Multiple attestations** - Require consensus from multiple issuers
-4. **Cryptographic proofs** - Attestations can include proofs that validate specific claims (see [Proof Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md))
-5. **Challenge mechanism** - Resolver supports challenges to disputed attestations (see [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for details)
-6. **Maturation delay** - Time-based delay before trust is granted
+2. **Challenge mechanism** - Resolver supports ownership challenges with maturation delay (see [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) §5.2 for details)
+3. **Maturation delay** - Time-based delay before attestations count toward ownership scores
 
 **DID → Index Address Mapping:** The system maps DIDs to Ethereum addresses for on-chain indexing. This mapping is handled by the SDK and contracts. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for technical details.
 
@@ -384,8 +349,7 @@ Schema Registry: 0x7946127D2f517c8584FdBF801b82F54436EC6FC7
 
 ### Frontend
 
-**Registry UI:** https://registry.omatrust.org  
-**Reputation UI:** https://reputation.oma3.org
+**Registry UI:** https://registry.omatrust.org
 
 ### API Endpoints
 
@@ -450,16 +414,12 @@ registry.mint(...12 parameters including metadataJson)
 - ✅ DataHash attestations
 
 **Coming Soon:**
-- EAS integration for structured attestations
 - Cross-chain deployment (Ethereum, Base, Optimism)
 - Deduplication contracts on OMAchain
-- Enhanced reputation scoring
-- User review attestations
 
 ## Learn More
 
 - **[Tokenized Services](/app-registry/erc8004-compatibility)** - Data model details
-- **[Attestation Framework](/reputation/attestation-types)** - How trust is verified
 - **[Registration Cookbooks](./cookbooks/register-website.md)** - Specific examples
 - **[Client Guide](/reputation/consumer-workflow)** - Integration for apps
 

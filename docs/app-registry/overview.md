@@ -50,28 +50,32 @@ Metadata can be stored on-chain or off-chain:
 1. **Choose your DID and verify ownership** — Pick `did:web` (domain-based) or `did:pkh` (blockchain-based) and prove control
 2. **Connect and register** — Visit [registry.omatrust.org](https://registry.omatrust.org) and select your interface types
 3. **Add metadata** — Provide descriptions, endpoints, schemas, and platform info through the wizard
-4. **Collect attestations** — Build trust at [reputation.oma3.org](https://reputation.oma3.org) with audits, reviews, and certifications
+4. **Build trust** — Optionally collect attestations (audits, reviews, certifications) via the [Reputation System](/reputation/attestation-types)
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
 │  Clients (Users, AI Agents, Apps)               │
-│  Query registry + attestations for trust data   │
+│  Query registry for service identity & metadata │
 └─────────────────┬───────────────────────────────┘
                   │
         ┌─────────┴─────────┐
         │                   │
 ┌───────▼────────┐   ┌──────▼─────────┐
-│  App Registry  │   │  Attestations  │
-│  (ERC-721)     │   │  (EAS Schemas) │
+│  App Registry  │   │   Resolver     │
+│  (ERC-721)     │   │  (Ownership &  │
+│                │   │   DataHash)    │
 └───────┬────────┘   └───────┬────────┘
         │                    │
+┌───────▼────────┐           │
+│   Metadata     │           │
+│  (On-chain)    │           │
+└───────┬────────┘           │
         └─────────┬──────────┘
                   │
         ┌─────────▼──────────┐
         │  OMAchain Testnet  │
-        │  (Coordination)    │
         └────────────────────┘
 ```
 

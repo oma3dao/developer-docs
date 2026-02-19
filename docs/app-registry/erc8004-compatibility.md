@@ -414,20 +414,11 @@ const mcpServers = await indexer.query({
 
 ### What are Artifacts?
 
-For downloadable binaries, artifacts provide supply-chain security similar to Apple notarization or Windows Authenticode.
-
-### Artifact DID Format
-
-`did:artifact:<cidv1>` - CIDv1 base32 hash of artifact bytes (SHA-256 for V1)
-
-**Why CIDv1?**
-- Content-addressed (hash = identifier)
-- IPFS compatible
-- Self-verifying
-
-**Example:** `did:artifact:bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi`
+For downloadable binaries, artifacts provide supply-chain security similar to Apple notarization or Windows Authenticode. Each artifact is identified by a content-addressed `did:artifact:<cidv1>` identifier (CIDv1 base32 hash of artifact bytes using SHA-256).
 
 ### Structure
+
+Artifacts are referenced from `platforms` and detailed in the `artifacts` map:
 
 **In platforms:**
 ```json
@@ -463,27 +454,9 @@ For downloadable binaries, artifacts provide supply-chain security similar to Ap
 - `container` - Docker/OCI images
 - `website` - SRI manifests for web apps
 
-### Verification Flow
+Clients verify artifacts by downloading the binary, computing its CIDv1 hash (SHA-256), and comparing it to the `artifactDid`. If they match, the binary hasn't been tampered with.
 
-```typescript
-// 1. Client fetches download URL
-const binary = await fetch(platforms.macos.downloadUrl);
-
-// 2. Compute CIDv1 hash (SHA-256)
-const hash = computeCIDv1(binary); // Using SHA-256 multihash
-
-// 3. Compare with artifact DID
-const artifactDid = platforms.macos.artifactDid;
-
-// 4. Verify
-if (hash === artifactDid) {
-  // ✅ Binary hasn't been tampered with
-  // Safe to install!
-}
-```
-
-**For complete artifact specification including SRI manifests for websites, see:**
-[OMATrust Identity Specification Appendix A](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md#appendix-a)
+For the complete `did:artifact` specification including computation rules, SRI manifests for websites, and verification requirements, see [Identity Specification Appendix A](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md#appendix-a).
 
 ## Status Lifecycle
 

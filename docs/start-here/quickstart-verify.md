@@ -4,7 +4,7 @@ title: "Quickstart: Verify Reputation"
 
 # Quickstart: Verify Reputation
 
-Look up and verify an on-chain attestation in under 5 minutes.
+Look up and verify an on-chain attestation.
 
 ## 1. Install
 
@@ -12,36 +12,40 @@ Look up and verify an on-chain attestation in under 5 minutes.
 npm install @oma3/omatrust ethers @ethereum-attestation-service/eas-sdk
 ```
 
-## 2. Read an Attestation
+## 2. Look Up Attestations by Subject
+
+Use the same `did:web:example.com` from the [Publish quickstart](/start-here/quickstart-publish) to find all attestations about that service:
 
 ```ts
 import {
-  getAttestation,
+  listAttestations,
   verifyAttestation,
 } from "@oma3/omatrust/reputation";
 
 // You need an ethers v6 Provider connected to the chain where the attestation lives
-const attestation = await getAttestation({
-  uid: "0x<attestation-uid>",                                                       // UID of the attestation to look up
+const attestations = await listAttestations({
+  subject: "did:web:example.com",                                                   // The DID you published in the quickstart
   provider,                                                                         // ethers v6 Provider
   easContractAddress: "0x8835AF90f1537777F52E482C8630cE4e947eCa32",                 // EAS contract on OMAChain Testnet
   schema: "string subject, string version, uint256 ratingValue, string reviewBody, string[] screenshotUrls, string[] proofs",
 });
 
-console.log(attestation.data.subject);      // "did:web:example.com"
-console.log(attestation.data.ratingValue);   // 5
+console.log(`Found ${attestations.length} attestation(s)`);
+console.log(attestations[0].data.subject);      // "did:web:example.com"
+console.log(attestations[0].data.ratingValue);   // 5
 ```
 
-## 3. Verify the Attestation
+## 3. Verify Each Attestation
 
 ```ts
-const verification = await verifyAttestation({
-  attestation,
-  provider,
-});
+for (const attestation of attestations) {
+  const verification = await verifyAttestation({
+    attestation,
+    provider,
+  });
 
-console.log(verification.valid);    // true or false
-console.log(verification.reasons);  // array of reasons if invalid
+  console.log(attestation.uid, verification.valid, verification.reasons);
+}
 ```
 
 `verifyAttestation` checks that the attestation is on-chain, not revoked, and that any attached proofs are valid. If no proofs were submitted with the attestation, it will flag that.
