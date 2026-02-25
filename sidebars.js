@@ -36,7 +36,7 @@ const sidebars = {
     },
     {
       type: 'category',
-      label: 'SDK',
+      label: 'SDKs & APIs',
       items: [
         'sdk/getting-started',
         {
@@ -46,18 +46,26 @@ const sidebars = {
         },
         {
           type: 'category',
-          label: 'API Reference',
+          label: 'TypeScript SDK',
           items: [
             {
               type: 'doc',
               id: 'sdk/api-reference/reputation-sdk',
-              label: 'Reputation SDK',
+              label: 'Reputation SDK Reference',
             },
             {
               type: 'doc',
               id: 'sdk/api-reference/identity-sdk',
-              label: 'Identity SDK',
+              label: 'Identity SDK Reference',
             },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'HTTP APIs',
+          items: [
+            'api/delegated-attestation',
+            'api/controller-witness',
           ],
         },
         {
@@ -87,6 +95,7 @@ const sidebars = {
         'integrations/erc8004-integration',
       ],
     },
+
     // App Registry — hidden, see GitHub issue #XX: Refine App Registry docs and re-publish
     // {
     //   type: 'category',

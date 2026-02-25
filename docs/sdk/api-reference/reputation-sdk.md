@@ -392,6 +392,32 @@ function buildDelegatedAttestationTypedData(
 - Call this directly only if you need the typed data without the full `delegatedRequest` wrapper.
 - Throws: `INVALID_INPUT`
 
+### `buildDelegatedTypedDataFromEncoded(params)`
+
+```ts
+type BuildDelegatedTypedDataFromEncodedParams = {
+  chainId: number;
+  easContractAddress: Hex;
+  schemaUid: Hex;
+  encodedData: Hex;
+  recipient: Hex;
+  attester: Hex;
+  nonce: bigint | number;
+  revocable?: boolean;
+  expirationTime?: bigint | number;
+  refUid?: Hex;
+  value?: bigint | number;
+  deadline?: bigint | number;
+};
+function buildDelegatedTypedDataFromEncoded(
+  params: BuildDelegatedTypedDataFromEncodedParams
+): { domain: Record<string, unknown>; types: Record<string, unknown>; message: Record<string, unknown> };
+```
+
+- Purpose: Build delegated attestation EIP-712 typed data from pre-encoded bytes.
+- Use this when your relay/server receives already-encoded attestation bytes and must independently rebuild typed data for verification or signing checks.
+- Unlike `buildDelegatedAttestationTypedData`, this function does not encode schema/data and does not resolve recipient from DID input. It uses `encodedData` and `recipient` exactly as provided.
+
 ### `splitSignature(signature)`
 
 ```ts
@@ -738,7 +764,8 @@ function verifyDnsTxtControllerDid(
 ```
 
 - Purpose: Verify that the `_omatrust.<domain>` DNS TXT record contains the expected controller DID.
-- Node.js only — uses the `dns` module for resolution. Not available in browsers.
+- In Node.js/server runtimes, this resolves DNS TXT via the native `dns` module.
+- In browser bundles, this function exists for API compatibility but throws `NETWORK_ERROR` when called.
 - Throws: `NETWORK_ERROR`
 
 #### `parseDnsTxtRecord(record)`
