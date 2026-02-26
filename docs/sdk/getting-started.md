@@ -69,6 +69,10 @@ try {
 
 See the [Reputation Reference](/sdk/api-reference/reputation-sdk) and [Identity Reference](/sdk/api-reference/identity-sdk) for the full error code tables.
 
+## Real-World Example
+
+For a production example of the SDK in use, see the [rep-attestation-frontend](https://github.com/oma3dao/rep-attestation-frontend) repository — the source for the OMATrust reputation web interface at [reputation.omatrust.org](https://reputation.omatrust.org). It demonstrates attestation submission, delegated attestation flows, proof creation, and controller witness integration.
+
 ## Further Reading
 
 - [Reputation SDK Overview](/sdk/guides) — Workflow examples for attestation and verification

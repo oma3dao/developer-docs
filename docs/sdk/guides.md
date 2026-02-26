@@ -214,3 +214,7 @@ The SDK provides creation and verification functions for all seven proof types d
 | `tx-interaction`    | `commercial-tx`      | On-chain smart contract interaction proof                    |
 
 See the [Reputation SDK Reference](/sdk/api-reference/reputation-sdk) for the full `create*Proof` and `verifyProof` function signatures.
+
+## Real-World Example
+
+For a production example of the SDK in use, see the [rep-attestation-frontend](https://github.com/oma3dao/rep-attestation-frontend) repository — the source for [reputation.omatrust.org](https://reputation.omatrust.org).
