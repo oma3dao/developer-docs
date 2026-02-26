@@ -8,6 +8,10 @@ This guide is for the npm package:
 
 `@oma3/omatrust`
 
+:::caution Alpha Release
+The SDK is currently in alpha. APIs may change between releases.
+:::
+
 ## Install
 
 ```bash
