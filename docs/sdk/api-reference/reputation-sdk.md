@@ -377,8 +377,31 @@ function extractExpirationTime(
 ): bigint | number | undefined;
 ```
 
-- Purpose: Extract expiration timestamp from attestation data fields. Looks for common field names (`expirationTime`, `expiration`, `validUntil`).
-- Returns: Timestamp as `bigint` or `number`, or `undefined` if no expiration field is found.
+- Purpose: Extract the `expiresAt` timestamp from decoded attestation data.
+- Returns: Timestamp as `bigint` or `number`, or `undefined` if `expiresAt` is not present or is null.
+- String values containing only digits are converted to `bigint`.
+
+### `validateAttestationData(schema, data)`
+
+```ts
+type AttestationValidationError = {
+  schemaFieldName: string;   // Name of the schema field that failed validation
+  expectedType: string;      // ABI type declared in the schema (e.g., "uint256", "address")
+  providedType: string;      // JS type of the value that was provided (e.g., "null", "string")
+  providedValue: unknown;    // The actual value that was provided
+};
+
+function validateAttestationData(
+  schema: SchemaField[] | string,
+  data: Record<string, unknown>
+): AttestationValidationError[];
+```
+
+- Purpose: Validate attestation data against a schema before submitting on-chain. Returns an array of field-level errors for any values that don't match their declared ABI types.
+- Returns an empty array if all fields are valid.
+- Validates: `uint*`/`int*` (numeric values), `string`, `string[]`, `bool`, `address` (via ethers `isAddress`), `bytes`, and fixed-size `bytes1`–`bytes32`.
+- Used internally by `encodeAttestationData`. Call this directly if you want to surface validation errors to users before attempting a transaction.
+- This is a client-side check to prevent on-chain reverts from malformed data.
 
 ### `buildDelegatedAttestationTypedData(params)`
 
