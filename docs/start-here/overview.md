@@ -17,7 +17,7 @@ npm install @oma3/omatrust
 ## What You Can Do Today
 
 - **Publish attestations** — Issue security audits, compliance certifications, endorsements, user reviews, or user review responses as cryptographically signed on-chain records. See the [Reputation section](/reputation/reputation-model) for details on attestation types and workflows.
-- **Integrate with x402** — Use x402 signed offers and receipts as user review proof of interaction.  Learn more in the [x402 Integration Guide](/integrations/x402-integration)
+- **Integrate with x402** — Use x402 signed offers and receipts as user review proof of interaction.  Learn more in the [x402 Integration Guide](/integrations/x402/overview)
 - **Respond to reviews** — Publish on-chain responses to user reviews, creating a verifiable dialogue between service operators and reviewers
 - **Verify a service's reputation** — Query on-chain attestations for any internet service using the [SDK](/sdk/getting-started)
 - **Integrate trust checks** — Add reputation verification to your app, API, or AI agent in a few lines of code. See the [SDK API Reference](/sdk/api-reference/reputation-sdk) for function signatures.
