@@ -1,12 +1,12 @@
 const config = {
-    title: 'OMA3 Developer Docs',
-    tagline: 'Documentation for OMA3 Developers',
-    url: 'https://docs.oma3.org',
+    title: 'OMATrust Developer Docs',
+    tagline: 'Documentation for OMATrust Developers',
+    url: 'https://docs.omatrust.org',
     baseUrl: '/',
     onBrokenLinks: 'throw',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/favicon.ico',
-    organizationName: 'oma3', // Usually your GitHub org/user name.
+    organizationName: 'oma3dao', // Usually your GitHub org/user name.
     projectName: 'developer-docs', // Usually your repo name.
   
     presets: [
@@ -26,14 +26,14 @@ const config = {
   
     themeConfig: {
       navbar: {
-        title: 'OMA3 Developer Docs',
+        title: 'OMATrust Developer Docs',
         logo: {
           alt: 'OMA3 Logo',
           src: 'img/logo.png',
         },
         items: [
           {
-            href: 'https://github.com/oma3/developer-docs',
+            href: 'https://github.com/oma3dao/developer-docs',
             label: 'GitHub',
             position: 'right',
           },
