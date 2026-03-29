@@ -19,7 +19,34 @@ This page defines the key terms used throughout the OMATrust developer documenta
 | Verifier | Same as Consumer, but emphasizes the verification aspect — checking proofs, validating signatures, confirming attestation integrity. Used in W3C DID specifications. |
 | Service | An internet-facing application, API, website, smart contract, or agent. OMATrust reputation is about services, not end-users. |
 | DID | Decentralized Identifier. A globally unique identifier that doesn't depend on a central authority. Follows the [W3C DID standard](https://www.w3.org/TR/did-core/). Examples: `did:web:example.com`, `did:pkh:eip155:1:0xABC...`. |
+| DID Address | A 20-byte deterministic lookup key derived from a DID, used as the EAS `recipient` field for on-chain attestation indexing. Not a real wallet address. See [full definition](#did-address). |
 | Reputation | The aggregate of all attestations associated with a subject DID. Not a single score — it's the collection of verifiable trust signals that consumers interpret according to their own logic. |
+
+## DID Address {#did-address}
+
+A DID Address is a 20-byte value derived from a DID. It is used as the EAS `recipient` field for on-chain attestation indexing. It is **not** a real wallet address — it is a deterministic lookup key.
+
+**Derivation pipeline:**
+
+```
+DID → normalize → keccak256 → 32-byte hash → last 20 bytes → DID Address
+```
+
+For example, `did:web:example.com` is normalized, hashed with keccak256 to produce a 32-byte digest, and then the low-order 160 bits (last 20 bytes) are taken as the DID Address.
+
+**SDK functions:**
+
+| Function | Input | Description |
+|----------|-------|-------------|
+| `didToAddress(did)` | A DID string | Runs the full pipeline: normalize → hash → truncate |
+| `computeDidHash(did)` | A DID string | Returns the 32-byte keccak256 hash (intermediate step) |
+| `computeDidAddress(didHash)` | A 32-byte hash | Truncates to the last 20 bytes (final step) |
+
+`didToAddress` and `computeDidAddress` produce the same result for the same DID — they are different entry points into the same pipeline.
+
+**Why both `recipient` and `subject`?** OMATrust attestation schemas store the full DID string in a `subject` field (for human readability and verification) and the derived DID Address in the EAS `recipient` field (for efficient on-chain indexing). The DID Address is what makes attestations queryable by subject on EAS.
+
+See [OMATrust Identity Specification §5.3.2](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for the formal definition, and the [Identity SDK Reference](/sdk/api-reference/identity-sdk#hashing-and-address) for function signatures.
 
 ## Identity Terms
 

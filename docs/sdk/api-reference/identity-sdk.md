@@ -55,9 +55,9 @@ Most developers should use `normalizeDid`, `didToAddress`, and the CAIP builders
 ### Hashing and Address
 
 - `computeDidHash(did: Did): Hex` — Compute the keccak256 hash of a normalized DID. Normalizes the DID first, then hashes the UTF-8 bytes. Returns a 32-byte hex string. Throws `INVALID_DID`.
-- `computeDidAddress(didHash: Hex): Hex` — Compute a DID Address from a DID hash by taking the last 20 bytes (simple truncation per OMATrust spec §5.3.2). Returns lowercase `0x`-prefixed hex (no EIP-55 checksum casing). This is not a real wallet address — it's a derived lookup key for EAS attestation indexing.
-- `didToAddress(did: Did): Hex` — Convenience: normalize a DID, hash it, and return the DID Address in one call (lowercase `0x`-prefixed hex). Throws `INVALID_DID`.
-- `validateDidAddress(did: Did, address: Hex): boolean` — Verify that a DID Address was computed correctly for a given DID. Returns `false` on any error.
+- `computeDidAddress(didHash: Hex): Hex` — Compute a [DID Address](/start-here/definitions#did-address) from a DID hash by taking the last 20 bytes (simple truncation per OMATrust spec §5.3.2). Returns lowercase `0x`-prefixed hex (no EIP-55 checksum casing). This is not a real wallet address — it's a derived lookup key for EAS attestation indexing.
+- `didToAddress(did: Did): Hex` — Convenience: normalize a DID, hash it, and return the [DID Address](/start-here/definitions#did-address) in one call (lowercase `0x`-prefixed hex). Throws `INVALID_DID`.
+- `validateDidAddress(did: Did, address: Hex): boolean` — Verify that a [DID Address](/start-here/definitions#did-address) was computed correctly for a given DID. Returns `false` on any error.
 
 ### DID Builders
 

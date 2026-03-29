@@ -18,8 +18,8 @@ OMATrust interfaces with ERC-8004 in two ways:
 
 Three extensions are being developed to expand ERC-8004's capabilities. The first is currently under review as a [pull request on the ERC-8004 repository](https://github.com/erc-8004/erc-8004-contracts/pull/20).  It defines how to map ERC-8004 to Ethereum Attestation Service (EAS) for attestation indexing:
 
-- **DID Address** — A 20-byte value derived from truncating `keccak256(canonicalDID)`, used as the EAS `recipient` field for efficient querying.  ERC-8004 `agentURI` identities can be expressed as a DID using the `did:web` method.
-- **Schema design** — OMATrust attestation schemas utilize both `recipient` (DID Address for indexing) and `subject` (full DID string) for verification.
+- **[DID Address](/start-here/definitions#did-address)** — A 20-byte value derived from truncating `keccak256(canonicalDID)`, used as the EAS `recipient` field for efficient querying.  ERC-8004 `agentURI` identities can be expressed as a DID using the `did:web` method.
+- **Schema design** — OMATrust attestation schemas utilize both `recipient` ([DID Address](/start-here/definitions#did-address) for indexing) and `subject` (full DID string) for verification.
 
 ## Further Reading
 

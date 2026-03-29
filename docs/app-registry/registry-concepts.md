@@ -343,7 +343,7 @@ Resolver:  0x77E058106762AeA4A567f2919Ef896bb6A82f914
 2. **Challenge mechanism** - Resolver supports ownership challenges with maturation delay (see [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) §5.2 for details)
 3. **Maturation delay** - Time-based delay before attestations count toward ownership scores
 
-**DID → Index Address Mapping:** The system maps DIDs to Ethereum addresses for on-chain indexing. This mapping is handled by the SDK and contracts. See the [Identity Specification](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-identity.md) for technical details.
+**DID → Index Address Mapping:** The system maps DIDs to [DID Addresses](/start-here/definitions#did-address) for on-chain indexing. The SDK's `didToAddress` function handles this derivation.
 
 ## Integration Points
 
