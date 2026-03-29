@@ -18,9 +18,9 @@ This lets users create attestations without holding native tokens for gas.
 4. The server verifies the signature, checks schema eligibility, and submits the transaction via `attestByDelegation` on the EAS contract
 5. The server returns the attestation UID and transaction hash
 
-## Happy Path (SDK)
+## Typical Implementation
 
-The `@oma3/omatrust` SDK handles encoding, typed-data construction, recipient derivation, and relay submission. This is the recommended integration path.
+The `@oma3/omatrust` SDK handles encoding, typed-data construction, recipient derivation, and relay submission. This is the simplest integration path.
 
 ```ts
 import {
@@ -178,7 +178,14 @@ The server extracts the schema UID, deadline, and attestation data from `prepare
 
 ## Schema Eligibility
 
-Only schemas on the subsidized allowlist are eligible for gas-subsidized delegated attestation. Submitting a non-subsidized schema returns `403 SCHEMA_NOT_SUBSIDIZED`.
+Only schemas on the subsidized allowlist can use the delegated attestation API. Submitting a non-subsidized schema returns `403 SCHEMA_NOT_SUBSIDIZED`. Non-subsidized schemas must be submitted directly by the attester, who pays gas.
+
+Currently subsidized schemas (OMAchain Testnet):
+
+| Schema | UID |
+|--------|-----|
+| User Review | `0x7ab3911527e5e47eaab9f5a2c571060026532dde8cb4398185553053963b2a47` |
+| Linked Identifier | `0x26e21911c55587925afee4b17839ab091e9829321b4a4e1658c497eb0088b453` |
 
 The active chain is determined by the `NEXT_PUBLIC_ACTIVE_CHAIN` environment variable on the server (`omachain-testnet` or `omachain-mainnet`).
 
