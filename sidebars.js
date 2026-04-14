@@ -89,6 +89,15 @@ const sidebars = {
     },
     {
       type: 'category',
+      label: 'Widgets',
+      items: [
+        'widgets/overview',
+        'widgets/basic-mode',
+        'widgets/integrated-mode',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Integrations',
       items: [
         {
