@@ -46,22 +46,22 @@ Most developers should use `normalizeDid`, `didToAddress`, and the CAIP builders
 ### Normalization
 
 - `normalizeDid(input: string): Did` — Normalize any DID to its canonical form. Routes to the appropriate method-specific normalizer. Bare domains (no `did:` prefix) are treated as `did:web`. Throws `INVALID_DID` for malformed input.
-- `normalizeDidWeb(input: string): Did` — Normalize a `did:web` DID. Lowercases the host, preserves path case. Throws `INVALID_DID` if input is a non-web DID method.
+- `normalizeDidWeb(input: string): Did` — Normalize a `did:web` DID. Lowercases the host, strips a leading `www.`, removes a trailing `.`, and preserves path case. Throws `INVALID_DID` if input is a non-web DID method.
 - `normalizeDidPkh(input: string): Did` — Normalize a `did:pkh` DID. Lowercases the address component per CAIP-10 canonical form. Expects format `did:pkh:namespace:chainId:address`. Throws `INVALID_DID`.
 - `normalizeDidHandle(input: string): Did` — Normalize a `did:handle` DID. Lowercases the platform, preserves username case (platform-defined). Expects format `did:handle:platform:username`. Throws `INVALID_DID`.
 - `normalizeDidKey(input: string): Did` — Normalize a `did:key` DID. Returns as-is (multibase encoding is case-sensitive). Throws `INVALID_DID`.
-- `normalizeDomain(domain: string): string` — Normalize a domain name: lowercase, strip trailing dot.
+- `normalizeDomain(domain: string): string` — Normalize a domain name: lowercase, strip trailing dot, strip leading `www.`.
 
 ### Hashing and Address
 
-- `computeDidHash(did: Did): Hex` — Compute the keccak256 hash of a normalized DID. Normalizes the DID first, then hashes the UTF-8 bytes. Returns a 32-byte hex string. Throws `INVALID_DID`.
+- `computeDidHash(did: Did): Hex` — Compute the keccak256 hash of a normalized DID. Normalizes the DID first, then hashes the UTF-8 bytes. For `did:web`, this uses the canonical hostname form, so `did:web:www.example.com` and `did:web:example.com` hash identically. Returns a 32-byte hex string. Throws `INVALID_DID`.
 - `computeDidAddress(didHash: Hex): Hex` — Compute a [DID Address](/start-here/definitions#did-address) from a DID hash by taking the last 20 bytes (simple truncation per OMATrust spec §5.3.2). Returns lowercase `0x`-prefixed hex (no EIP-55 checksum casing). This is not a real wallet address — it's a derived lookup key for EAS attestation indexing.
-- `didToAddress(did: Did): Hex` — Convenience: normalize a DID, hash it, and return the [DID Address](/start-here/definitions#did-address) in one call (lowercase `0x`-prefixed hex). Throws `INVALID_DID`.
+- `didToAddress(did: Did): Hex` — Convenience: normalize a DID, hash it, and return the [DID Address](/start-here/definitions#did-address) in one call (lowercase `0x`-prefixed hex). For `did:web`, the canonical hostname form strips a leading `www.` before hashing. Throws `INVALID_DID`.
 - `validateDidAddress(did: Did, address: Hex): boolean` — Verify that a [DID Address](/start-here/definitions#did-address) was computed correctly for a given DID. Returns `false` on any error.
 
 ### DID Builders
 
-- `buildDidWeb(domain: string): Did` — Build a `did:web` DID from a domain name (e.g., `"example.com"` → `"did:web:example.com"`). Normalizes the domain.
+- `buildDidWeb(domain: string): Did` — Build a `did:web` DID from a domain name (e.g., `"example.com"` → `"did:web:example.com"`). Normalizes the domain, including stripping a leading `www.`.
 - `buildDidPkh(namespace: string, chainId: string | number, address: string): Did` — Build a `did:pkh` DID from components (e.g., `"eip155"`, `1`, `"0x..."` → `"did:pkh:eip155:1:0x..."`). Lowercases the address.
 - `buildEvmDidPkh(chainId: string | number, address: string): Did` — Convenience: build a `did:pkh` with `eip155` namespace.
 - `buildDidPkhFromCaip10(caip10: Caip10): Did` — Build a `did:pkh` from a CAIP-10 string (e.g., `"eip155:1:0x..."` → `"did:pkh:eip155:1:0x..."`). Throws `INVALID_CAIP`.

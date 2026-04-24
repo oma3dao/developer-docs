@@ -23,8 +23,22 @@ Most developers should start with the high-level functions:
 - `listAttestations`
 - `verifyAttestation`
 - `callControllerWitness`
+- `verifySubjectOwnership`
 
 Advanced functions below are optional and intended for custom verifiers, specialized relays, and low-level integrations.
+
+## DID Canonicalization Note
+
+For `did:web` identifiers, the SDK applies a canonical hostname normalization before building DIDs, hashing DIDs, deriving DID addresses, or verifying subject ownership.
+
+Current `did:web` hostname normalization includes:
+
+- lowercasing the host
+- trimming surrounding whitespace
+- removing a trailing `.`
+- stripping a leading `www.`
+
+As a result, `did:web:www.example.com` and `did:web:example.com` normalize to the same canonical DID in the SDK. This behavior affects helpers built on DID normalization, including `normalizeDidWeb`, `buildDidWeb`, `computeDidHash`, `didToAddress`, and `verifyDidWebOwnership`.
 
 ## Core Types
 
@@ -782,13 +796,18 @@ function isChainSupported(chainId: number): boolean;
 ```ts
 function verifyDnsTxtControllerDid(
   domain: string,
-  expectedControllerDid: Did
+  expectedControllerDid: Did,
+  options?: {
+    resolveTxt?: (host: string) => Promise<string[][]>;
+    recordPrefix?: string;
+  }
 ): Promise<{ valid: boolean; record?: string; reason?: string }>;
 ```
 
-- Purpose: Verify that the `_omatrust.<domain>` DNS TXT record contains the expected controller DID.
-- In Node.js/server runtimes, this resolves DNS TXT via the native `dns` module.
-- In browser bundles, this function exists for API compatibility but throws `NETWORK_ERROR` when called.
+- Purpose: Verify that the `_controllers.<domain>` DNS TXT record contains the expected controller DID.
+- `recordPrefix` defaults to `_controllers`.
+- In Node.js/server runtimes, the default export resolves DNS TXT directly.
+- In browser bundles, DNS TXT verification requires an injected `resolveTxt` function. Without one, the browser export throws `NETWORK_ERROR`.
 - Throws: `NETWORK_ERROR`
 
 #### `parseDnsTxtRecord(record)`
@@ -821,6 +840,23 @@ function fetchDidDocument(
 - Purpose: Fetch `https://<domain>/.well-known/did.json` and return the parsed DID document.
 - Throws: `NETWORK_ERROR`
 
+#### `verifyDidJsonControllerDid(domain, expectedControllerDid, options?)`
+
+```ts
+function verifyDidJsonControllerDid(
+  domain: string,
+  expectedControllerDid: Did,
+  options?: {
+    fetchDidDocument?: (domain: string) => Promise<Record<string, unknown>>;
+  }
+): Promise<{ valid: boolean; reason?: string }>;
+```
+
+- Purpose: Verify that `https://<domain>/.well-known/did.json` contains the expected controller DID.
+- This is the `.well-known` counterpart to `verifyDnsTxtControllerDid`.
+- Internally, it fetches the DID document and then applies the same controller-address matching logic as `verifyDidDocumentControllerDid`.
+- Throws: `INVALID_INPUT`, `NETWORK_ERROR`
+
 #### `verifyDidDocumentControllerDid(didDocument, expectedControllerDid)`
 
 ```ts
@@ -841,6 +877,107 @@ function extractAddressesFromDidDocument(
 ```
 
 - Purpose: Extract all Ethereum addresses from a DID document's `verificationMethod` array.
+
+### Subject Ownership Helpers
+
+These functions are the SDK-level verification primitives for subject ownership. They are the closest reusable equivalent to the verification portion of `app-registry-frontend`'s `verify-and-attest` flow, but they do not write attestations or perform app-specific orchestration.
+
+#### `verifyDidWebOwnership(params)`
+
+```ts
+type VerifyDidWebOwnershipParams = {
+  subjectDid: Did;
+  connectedWalletDid: Did; // must be did:pkh
+  resolveTxt?: (host: string) => Promise<string[][]>;
+  recordPrefix?: string; // defaults to "_controllers"
+  fetchDidDocument?: (domain: string) => Promise<Record<string, unknown>>;
+};
+
+type SubjectOwnershipVerificationResult = {
+  valid: boolean;
+  method?: "dns" | "did-document" | "wallet" | "contract" | "minting-wallet" | "transfer";
+  reason?: string;
+  details?: string;
+  subjectDid: Did;
+  connectedWalletDid: Did;
+  controllingWalletDid?: Did;
+};
+
+function verifyDidWebOwnership(
+  params: VerifyDidWebOwnershipParams
+): Promise<SubjectOwnershipVerificationResult>;
+```
+
+- Purpose: Verify ownership of a `did:web` subject against a connected wallet DID.
+- The `subjectDid` is canonicalized before verification. For `did:web`, that includes lowercasing the host, removing a trailing `.`, and stripping a leading `www.`.
+- Verification order:
+  - DNS TXT check at `_controllers.<domain>`
+  - DID document check at `https://<domain>/.well-known/did.json`
+- Returns `method: "dns"` or `method: "did-document"` on success.
+- Best used in backend/server runtimes. In browser runtimes, provide `resolveTxt` if you want DNS verification there.
+- Throws: `INVALID_INPUT`, `NETWORK_ERROR`
+
+#### `verifyDidPkhOwnership(params)`
+
+```ts
+type EvmOwnershipProvider = {
+  call(transaction: { to: string; data: string }): Promise<string>;
+  getCode(address: string): Promise<string>;
+  getStorage(address: string, slot: string): Promise<string>;
+  getTransaction(hash: string): Promise<{
+    from?: string | null;
+    to?: string | null;
+    value?: bigint | string | number | null;
+    blockNumber?: number | null;
+  } | null>;
+  getTransactionReceipt(hash: string): Promise<{ blockNumber: number } | null>;
+  getBlockNumber(): Promise<number>;
+  getBlock(blockNumber: number): Promise<{ timestamp: number } | null>;
+};
+
+type VerifyDidPkhOwnershipParams = {
+  subjectDid: Did;          // must be an EVM did:pkh
+  connectedWalletDid: Did;  // must be did:pkh
+  provider: EvmOwnershipProvider;
+  txHash?: Hex | string;
+};
+
+function verifyDidPkhOwnership(
+  params: VerifyDidPkhOwnershipParams
+): Promise<SubjectOwnershipVerificationResult>;
+```
+
+- Purpose: Verify ownership of an EVM `did:pkh` subject.
+- Supported cases:
+  - direct wallet DID match
+  - contract ownership via `owner()`
+  - contract ownership via `admin()`
+  - contract ownership via `getOwner()`
+  - EIP-1967 admin slot lookup
+  - transfer-proof verification when `txHash` is provided
+- Returns one of:
+  - `method: "wallet"`
+  - `method: "contract"`
+  - `method: "minting-wallet"`
+  - `method: "transfer"`
+- Throws: `INVALID_INPUT`, `NETWORK_ERROR`
+
+#### `verifySubjectOwnership(params)`
+
+```ts
+type VerifySubjectOwnershipParams =
+  | VerifyDidWebOwnershipParams
+  | VerifyDidPkhOwnershipParams;
+
+function verifySubjectOwnership(
+  params: VerifySubjectOwnershipParams
+): Promise<SubjectOwnershipVerificationResult>;
+```
+
+- Purpose: Dispatch subject ownership verification based on the DID method.
+- `did:web` subjects route to `verifyDidWebOwnership`.
+- `did:pkh` subjects route to `verifyDidPkhOwnership`.
+- Throws `INVALID_INPUT` for unsupported DID methods or missing required inputs such as the EVM provider for `did:pkh`.
 
 ### EIP-712 Helpers
 

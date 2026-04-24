@@ -34,6 +34,15 @@ DID → normalize → keccak256 → 32-byte hash → last 20 bytes → DID Addre
 
 For example, `did:web:example.com` is normalized, hashed with keccak256 to produce a 32-byte digest, and then the low-order 160 bits (last 20 bytes) are taken as the DID Address.
 
+For `did:web`, normalization uses the canonical hostname form before hashing. That includes:
+
+- lowercasing the host
+- trimming surrounding whitespace
+- removing a trailing `.`
+- stripping a leading `www.`
+
+So `did:web:www.example.com` and `did:web:example.com` produce the same DID Address.
+
 **SDK functions:**
 
 | Function | Input | Description |
