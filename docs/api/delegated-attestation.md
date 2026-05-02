@@ -30,7 +30,7 @@ import {
 
 // 1. Fetch the attester's current EAS nonce
 const nonceRes = await fetch(
-  `https://reputation.omatrust.org/api/eas/nonce?attester=${walletAddress}`
+  `https://api.omatrust.org/v1/nonce?attester=${walletAddress}`
 );
 const { nonce, easAddress, chainId } = await nonceRes.json();
 
@@ -67,7 +67,7 @@ const signature = await signer.signTypedData(
 
 // 4. Submit to the relay
 const result = await submitDelegatedAttestation({
-  relayUrl: "https://reputation.omatrust.org/api/eas/delegated-attest",
+  relayUrl: "https://api.omatrust.org/v1/delegated-attest",
   prepared,
   signature,
   attester: walletAddress,
