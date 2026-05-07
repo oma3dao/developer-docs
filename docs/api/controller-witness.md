@@ -6,16 +6,7 @@ sidebar_position: 1
 
 # Controller Witness API
 
-The Controller Witness API creates an immutable on-chain record that a trusted witness observed a controller assertion at a specific point in time. This solves the **mutable evidence problem**: when a subject removes or changes their DNS TXT or `did.json`, verifiers can no longer confirm that a key was authorized at the time of a Key Binding attestation. The witness attestation preserves that proof permanently.
-
-## How It Works
-
-1. A subject creates a **Key Binding** attestation binding a key (e.g., `did:pkh` wallet) to their `did:web` identity
-2. The subject publishes controller evidence in their DNS TXT record or `/.well-known/did.json`
-3. Any client calls the Controller Witness API with the Key Binding UID
-4. The witness server verifies the Key Binding on-chain, checks the offchain evidence, and submits a **Controller Witness** attestation to EAS
-
-The result is an immutable timestamp: "At time T, the witness observed that `did:web:example.com` asserted `did:pkh:eip155:66238:0x...` as its controller."
+The Controller Witness API creates an immutable on-chain record that a trusted witness observed a controller assertion at a specific point in time. This solves the **mutable evidence problem**: when a subject removes or changes their DNS TXT or `did.json`, verifiers can no longer confirm that a key was authorized. The witness attestation preserves that proof permanently.
 
 ## Endpoint
 
@@ -23,34 +14,42 @@ The result is an immutable timestamp: "At time T, the witness observed that `did
 POST https://api.omatrust.org/v1/controller-witness
 ```
 
-No API key required. The on-chain prerequisite (a valid Key Binding on an approved schema/chain) serves as the anti-abuse mechanism.
+Requires authentication (session cookie for web clients). Consumes one sponsored write from the user's subscription quota.
 
-## Request
+## Request (Recommended)
+
+Use `requestControllerWitness` from the SDK or call the API directly with:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `attestationUid` | string | Yes | EAS attestation UID of the Key Binding attestation (0x-prefixed, 32 bytes) |
-| `chainId` | number | Yes | Chain ID where the Key Binding lives (e.g., `66238` for OMAchain testnet) |
-| `easContract` | string | Yes | EAS contract address on that chain (0x-prefixed, 20 bytes) |
-| `schemaUid` | string | Yes | Schema UID of the Key Binding attestation (0x-prefixed, 32 bytes) |
-| `subject` | string | Yes | Subject DID (e.g., `did:web:example.com`) — must match the Key Binding |
-| `controller` | string | Yes | Controller DID (e.g., `did:pkh:eip155:66238:0x...`) — must match the Key Binding |
-| `method` | string | Yes | Evidence verification method: `dns-txt` or `did-json` |
+| `subjectDid` | string | Yes | Subject DID (e.g., `did:web:example.com`) |
+| `controllerDid` | string | Yes | Controller DID — either `did:pkh:eip155:<chainId>:<address>` or `did:jwk:<encoded-public-key>` |
+| `chainId` | number | No | Chain ID (defaults to the API's active chain) |
 
 ### Example Request
 
 ```bash
 curl -X POST https://api.omatrust.org/v1/controller-witness \
   -H "Content-Type: application/json" \
+  --cookie "omatrust_session=..." \
   -d '{
-    "attestationUid": "0xabc123...def456",
-    "chainId": 66238,
-    "easContract": "0x7946127D2f517c8584FdBF801b82F54436EC6FC7",
-    "schemaUid": "0x807b38ce9aa23fdde4457de01db9c5e8d6ec7c8feebee242e52be70847b7b966",
-    "subject": "did:web:example.com",
-    "controller": "did:pkh:eip155:66238:0x1234567890abcdef1234567890abcdef12345678",
-    "method": "dns-txt"
+    "subjectDid": "did:web:example.com",
+    "controllerDid": "did:pkh:eip155:66238:0x1234567890abcdef1234567890abcdef12345678"
   }'
+```
+
+### SDK Usage
+
+```ts
+import { requestControllerWitness } from "@oma3/omatrust/reputation";
+
+const result = await requestControllerWitness({
+  apiUrl: "https://api.omatrust.org/v1/controller-witness",
+  subjectDid: "did:web:example.com",
+  controllerDid: "did:pkh:eip155:66238:0x1234...",
+});
+
+console.log(result.uid, result.method);
 ```
 
 ## Response (Success)
@@ -62,60 +61,64 @@ curl -X POST https://api.omatrust.org/v1/controller-witness \
   "txHash": "0x...",
   "blockNumber": 12345,
   "observedAt": 1738972800,
-  "existing": false,
-  "elapsed": "1234ms"
+  "method": "dns-txt"
 }
 ```
 
 | Field | Type | Description |
 |---|---|---|
 | `success` | boolean | `true` |
-| `uid` | string | EAS attestation UID of the new (or existing) Controller Witness attestation |
-| `txHash` | string \| null | Transaction hash (`null` if returning an existing attestation) |
-| `blockNumber` | number \| null | Block number (`null` if returning an existing attestation) |
+| `uid` | string \| null | EAS attestation UID of the Controller Witness attestation |
+| `txHash` | string | Transaction hash |
+| `blockNumber` | number | Block number |
 | `observedAt` | number | Unix timestamp when the witness observed the controller assertion |
-| `existing` | boolean | `true` if a duplicate was found and the existing UID was returned |
-| `elapsed` | string | Request duration |
+| `method` | string | Evidence method used (`dns-txt` or `did-json`) |
 
 ## Error Codes
 
 | HTTP Status | Code | Description |
 |---|---|---|
-| 400 | `MISSING_FIELDS` | Required fields missing or malformed |
-| 400 | `INVALID_SUBJECT` | Subject is not a valid DID |
-| 400 | `INVALID_CONTROLLER` | Controller is not a valid DID |
-| 400 | `INVALID_METHOD` | Method is not `dns-txt` or `did-json` |
-| 403 | `CHAIN_NOT_APPROVED` | Chain ID or EAS contract not in the approved list |
-| 403 | `SCHEMA_NOT_APPROVED` | Schema UID is not a witness-enabled schema |
-| 404 | `ATTESTATION_NOT_FOUND` | The `attestationUid` does not resolve to an attestation on-chain |
-| 404 | `EVIDENCE_NOT_FOUND` | Controller evidence not found via the specified method |
-| 409 | `ATTESTATION_REVOKED` | The Key Binding attestation has been revoked |
-| 422 | `FIELDS_MISMATCH` | Subject or controller in the request doesn't match the on-chain attestation |
-| 500 | `SERVER_ERROR` | Internal error (key not configured, EAS submission failed, etc.) |
+| 400 | `INVALID_DID` | Subject or controller is not a valid DID |
+| 400 | `UNSUPPORTED_SUBJECT_TYPE` | Subject is not a `did:web` (required for endpoint evidence discovery) |
+| 401 | `UNAUTHENTICATED` | No valid session |
+| 403 | `SPONSORED_WRITE_LIMIT_EXCEEDED` | User's write quota is exhausted |
+| 403 | `SCHEMA_NOT_ELIGIBLE` | Controller witness schema not allowed for the user's plan |
+| 422 | `EVIDENCE_NOT_FOUND` | Controller not confirmed by endpoint evidence (DNS TXT or DID document) |
+| 500 | `SCHEMA_NOT_DEPLOYED` | Controller witness schema not deployed on the active chain |
+| 500 | `SERVER_ERROR` | Server wallet not configured or submission failed |
 
-## Evidence Methods
+### Client-Side DID Validation
 
-### dns-txt
+Use the SDK's `validatePrivateKeyDid()` to pre-validate the `controllerDid` before calling the API. This catches malformed DIDs early and provides detailed error messages:
 
-The witness queries `_omatrust.<domain>` for DNS TXT records containing a controller assertion in the OMATrust evidence string format:
+```ts
+import { validatePrivateKeyDid } from "@oma3/omatrust/identity";
 
+const result = validatePrivateKeyDid(controllerDid);
+if (!result.valid) {
+  console.error(result.error);
+  // e.g., "Invalid eip155 chain ID "abc" (must be numeric)"
+}
 ```
-v=1;controller=did:pkh:eip155:66238:0x1234567890abcdef1234567890abcdef12345678
-```
 
-The subject must be a `did:web` so the domain can be extracted. The controller value must be a DID (e.g., `did:pkh:eip155:<chainId>:<address>`). The witness compares the address portion of the controller DID against the expected controller, so the same address on different chains will match.
+The controller DID must be a private-key DID — either `did:pkh:eip155:<chainId>:<address>` for EVM wallets or `did:jwk:<encoded-public-key>` for non-EVM keys. The `subjectDid` must be a `did:web`.
 
-### did-json
+## How It Works
 
-The witness fetches `https://<domain>/.well-known/did.json` and looks for the controller address in `verificationMethod` entries. Specifically, it checks `blockchainAccountId` fields in the DID document for an address match.
+1. The API authenticates the user's session and checks their sponsored write quota
+2. It discovers endpoint evidence for the subject DID (DNS TXT at `_controllers.<domain>` and `/.well-known/did.json`)
+3. If the controller DID is confirmed by endpoint evidence, it submits a Controller Witness attestation using the OMA3 server wallet
+4. One sponsored write is deducted from the user's quota
+
+The OMA3 server wallet is the attester — this is what gives the witness attestation its trust value. A verifier can check that the attester is a known OMA3 wallet.
 
 ## Prerequisites
 
-Before calling this API, the caller must have:
+Before calling this API, the subject must have:
 
-1. **A Key Binding attestation on-chain** — created via the OMATrust attestation frontend or directly through EAS. The Key Binding must be on an approved chain and schema.
+1. **Controller evidence published** — either a DNS TXT record at `_controllers.<domain>` or a `did.json` at `/.well-known/did.json` containing the controller DID.
 
-2. **Controller evidence published** — either a DNS TXT record at `_omatrust.<domain>` or a `did.json` at `/.well-known/did.json` containing the controller DID.
+2. **An authenticated OMATrust session** — sign in via the OMATrust portal or backend session API.
 
 ### Setting Up DNS TXT Evidence
 
@@ -123,7 +126,7 @@ Add a TXT record to your domain:
 
 | Record | Type | Value |
 |---|---|---|
-| `_omatrust.example.com` | TXT | `v=1;controller=did:pkh:eip155:66238:0xYourAddress` |
+| `_controllers.example.com` | TXT | `v=1;controller=did:pkh:eip155:66238:0xYourAddress` |
 
 ### Setting Up did.json Evidence
 
@@ -142,22 +145,6 @@ Publish a DID document at `https://example.com/.well-known/did.json`:
 }
 ```
 
-## Approved Chains and Schemas
-
-The witness server only accepts attestations from approved chains and schemas.
-
-### Chains
-
-| Chain | Chain ID | EAS Contract |
-|---|---|---|
-| OMAchain Testnet | 66238 | `0x7946127D2f517c8584FdBF801b82F54436EC6FC7` |
-
-### Schemas
-
-| Schema | UID (OMAchain Testnet) |
-|---|---|
-| Key Binding | `0x807b38ce9aa23fdde4457de01db9c5e8d6ec7c8feebee242e52be70847b7b966` |
-
 ## Controller Witness Schema
 
 The attestation created by the witness uses the following EAS schema:
@@ -173,39 +160,21 @@ string subject, string controller, string method, uint256 observedAt
 | `method` | string | How the witness observed the assertion (`dns-txt` or `did-json`) |
 | `observedAt` | uint256 | Unix timestamp when the witness observed the controller assertion |
 
-Schema UID on OMAchain Testnet: `0xc81419f828755c0be2c49091dcad0887b5ca7342316dfffb4314aadbf8205090`
+Schema UID on OMAChain Testnet: `0xc81419f828755c0be2c49091dcad0887b5ca7342316dfffb4314aadbf8205090`
 
 The schema is non-revocable. Once a witness attestation is created, it permanently records what was observed at that point in time.
 
-## Typical Integration Flow
+## Deprecated: Legacy API Format
 
-```
-┌─────────┐     ┌──────────┐     ┌─────────────┐     ┌─────┐
-│  Client  │     │ Witness  │     │  DNS / Web  │     │ EAS │
-│          │     │  Server  │     │   Server    │     │     │
-└────┬─────┘     └────┬─────┘     └──────┬──────┘     └──┬──┘
-     │                │                   │               │
-     │  POST /api/    │                   │               │
-     │  controller-   │                   │               │
-     │  witness       │                   │               │
-     │───────────────>│                   │               │
-     │                │                   │               │
-     │                │  getAttestation() │               │
-     │                │──────────────────────────────────>│
-     │                │<──────────────────────────────────│
-     │                │  (verify gates)   │               │
-     │                │                   │               │
-     │                │  DNS TXT query /  │               │
-     │                │  fetch did.json   │               │
-     │                │──────────────────>│               │
-     │                │<──────────────────│               │
-     │                │  (verify match)   │               │
-     │                │                   │               │
-     │                │  eas.attest()     │               │
-     │                │──────────────────────────────────>│
-     │                │<──────────────────────────────────│
-     │                │                   │               │
-     │  { uid, txHash,│                   │               │
-     │    observedAt } │                   │               │
-     │<───────────────│                   │               │
-```
+The legacy `callControllerWitness` SDK function and the old request format (with `attestationUid`, `easContract`, `schemaUid`, `method` fields) are still accepted for backward compatibility but will be removed in a future SDK version.
+
+**Migrate to `requestControllerWitness`** which uses the simplified `{ subjectDid, controllerDid }` format. The backend handles evidence discovery, chain resolution, and schema lookup automatically.
+
+## Future: x402 and OAuth DCR 2.0
+
+The controller witness API currently requires a web session (cookie-based authentication). Future versions will support:
+
+- **x402 signed receipts** — for headless/agent access with per-request payment
+- **OAuth DCR 2.0** — for registered software clients with API keys
+
+These will allow agents, wallets, and automated systems to request controller witnesses without a browser session.

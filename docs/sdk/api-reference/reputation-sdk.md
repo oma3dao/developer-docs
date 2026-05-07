@@ -22,7 +22,8 @@ Most developers should start with the high-level functions:
 - `getAttestation`
 - `listAttestations`
 - `verifyAttestation`
-- `callControllerWitness`
+- `requestControllerWitness`
+- `getControllerAuthorization`
 - `verifySubjectOwnership`
 
 Advanced functions below are optional and intended for custom verifiers, specialized relays, and low-level integrations.
@@ -288,7 +289,7 @@ function getAttestation(params: GetAttestationParams): Promise<AttestationQueryR
 
 ```ts
 type ListAttestationsParams = {
-  did: Did;
+  subjectDid: Did;
   provider: unknown;             // ethers v6 Provider
   easContractAddress: Hex;
   schemas?: Hex[];
@@ -322,6 +323,7 @@ function verifyAttestation(params: VerifyAttestationParams): Promise<VerifyAttes
 
 - Purpose: Verify attestation validity plus proof checks.
 - If `checks` is omitted, runs all applicable checks based on the proof types present in the attestation's `proofs` array.
+- `context` is an optional bag of values passed to individual proof verifiers. Recognized keys: `subjectDid` (the subject DID) and `controllerDid` (the controller DID).
 - `reasons` contains human-readable explanations for any failed checks.
 - Throws: `PROOF_VERIFICATION_FAILED`, `NETWORK_ERROR`
 
@@ -350,6 +352,139 @@ function callControllerWitness(params: CallControllerWitnessParams): Promise<Cal
 - The `gatewayUrl` is passed in by the consumer — not hardcoded. You decide whether to call your own API route or a shared gateway. See the [Controller Witness API](/api/controller-witness) for the raw endpoint contract.
 - Typically called after `submitAttestation` or `submitDelegatedAttestation` completes.
 - Throws: `NETWORK_ERROR`
+
+### `requestControllerWitness(params)`
+
+```ts
+type RequestControllerWitnessParams = {
+  subjectDid: Did;
+  controllerDid: Did;
+  gatewayUrl?: string;           // Defaults to OMATrust production endpoint
+  chainId?: number;              // Defaults to the API's active chain
+  timeoutMs?: number;            // Default: 15000
+};
+type RequestControllerWitnessResult = {
+  success: boolean;
+  uid: string | null;
+  txHash: string;
+  blockNumber: number;
+  observedAt: number;
+  method: string;
+};
+function requestControllerWitness(params: RequestControllerWitnessParams): Promise<RequestControllerWitnessResult>;
+```
+
+- Purpose: Request a controller witness attestation from the OMATrust backend. This is the recommended replacement for `callControllerWitness`.
+- Makes a single API call. The backend handles evidence discovery (DNS TXT, did.json), attestation submission, and write quota deduction.
+- Requires an authenticated session (cookie-based for web clients).
+- Throws: `NETWORK_ERROR`, `API_ERROR`
+
+### `getControllerAuthorization(params)`
+
+```ts
+type W3CKeyPurpose =
+  | "authentication"
+  | "assertionMethod"
+  | "keyAgreement";
+
+type GetControllerAuthorizationParams = {
+  controllerDid: string;         // Full DID: did:pkh:eip155:*:0x... or did:jwk:<encoded>
+  subjectDid: Did;
+  provider: unknown;             // ethers v6 Provider
+  chain?: string;                // CAIP-2 identifier, defaults to "eip155:6623"
+  easContractAddress?: Hex;      // If omitted, resolved from trust anchors
+  fromBlock?: number;            // Defaults to 0 (full history)
+  resolveTxt?: (host: string) => Promise<string[][]>;
+  fetchDidDocument?: (domain: string) => Promise<Record<string, unknown>>;
+  purpose?: W3CKeyPurpose[];     // Defaults to ["authentication", "assertionMethod"]
+};
+
+type ControllerWitnessEvidence = {
+  uid: Hex;
+  issuedAt: bigint;
+  attester: string;
+  method?: "dns" | "did-document" | "manual" | "other";
+};
+
+type ControllerAuthorizationResult = {
+  authorized: boolean;
+  anchoredFrom: bigint | null;
+  until: bigint | null;
+  currentlyVerified: boolean;
+  liveMethod: "dns" | "did-document" | null;
+  controllerWitnesses: ControllerWitnessEvidence[];
+  keyBindingUid: Hex | null;
+  keyPurposeStatus: "matched" | "unknown" | "mismatch" | "not-required";
+};
+function getControllerAuthorization(params: GetControllerAuthorizationParams): Promise<ControllerAuthorizationResult>;
+```
+
+- Purpose: Determine the authorization window for a controller-subject pair. Returns the time range during which the controller was authorized to file subject-scoped attestations.
+- **Breaking change in 0.1.0-alpha.11:** Renamed from `getAttesterAuthorization`. The `attester` parameter (raw EVM address) is replaced by `controllerDid` (a full DID string). Now supports `did:jwk` controllers in addition to EVM addresses.
+- Controller witness matching uses `isSameControllerId` internally — exact DID comparison + EVM address fallback (chain-agnostic) + JWK material match.
+- Key binding matching uses the `keyId` field (DID) and `publicKeyJwk` field (for `did:jwk`).
+- Checks on-chain controller-witness attestations, key-binding revocation and purpose status, and live DNS/did.json verification.
+- The consumer calls this once per controller-subject pair, then filters their attestation list in memory using the returned window.
+- `anchoredFrom` is the earliest timestamp of durable authorization evidence (first controller witness). Null when authorization is only currently verified by live DNS/did.json.
+- `until` is the end of the authorization window, set when a key binding revocation closes the window. Null if the window is still open.
+- `controllerWitnesses` returns structured evidence with metadata (UID, timestamp, attester, method) in oldest-first order.
+- `keyPurposeStatus` indicates whether the key binding's purposes satisfy the requested `purpose` filter. `"mismatch"` blocks authorization even if witnesses exist.
+- If `purpose` is omitted, defaults to `["authentication", "assertionMethod"]` which covers the normal signing/control use case.
+- If `easContractAddress` is omitted, the function fetches trust anchors and resolves the EAS address for the given chain. Throws `UNSUPPORTED_CHAIN` if the chain is not in the trust anchors.
+- Throws: `UNSUPPORTED_CHAIN`, `INVALID_INPUT`, `NETWORK_ERROR`
+
+#### Migration from `getAttesterAuthorization`
+
+```ts
+// Before (0.1.0-alpha.10 and earlier):
+import { getAttesterAuthorization } from "@oma3/omatrust/reputation";
+const auth = await getAttesterAuthorization({
+  attester: "0x1234...abcd",  // raw EVM address
+  subjectDid: "did:web:example.com",
+  provider,
+});
+
+// After (0.1.0-alpha.11):
+import { getControllerAuthorization } from "@oma3/omatrust/reputation";
+const auth = await getControllerAuthorization({
+  controllerDid: "did:pkh:eip155:1:0x1234...abcd",  // full DID, not raw address
+  subjectDid: "did:web:example.com",
+  provider,
+});
+```
+
+Key differences:
+- `attester: Hex` → `controllerDid: string` — accepts a full DID (`did:pkh:eip155:*:0x...` or `did:jwk:<encoded>`)
+- Now supports `did:jwk` controllers (not just EVM addresses)
+- Type renames: `GetAttesterAuthorizationParams` → `GetControllerAuthorizationParams`, `AttesterAuthorizationResult` → `ControllerAuthorizationResult`
+- No deprecated aliases — old names are removed
+
+#### Verifier usage pattern
+
+```ts
+import { getControllerAuthorization, listAttestations } from "@oma3/omatrust/reputation";
+
+// 1. Get the authorization window (one call per controller-subject pair)
+const auth = await getControllerAuthorization({
+  controllerDid: "did:pkh:eip155:1:0xABC...",
+  subjectDid: "did:web:example.com",
+  provider,
+});
+
+// 2. Filter attestations by the authorization window
+const attestations = await listAttestations({ subjectDid: "did:web:example.com", provider, easContractAddress });
+const authorized = attestations.filter(att => {
+  if (!auth.authorized) return false;
+  if (auth.until && att.time > auth.until) return false;
+  if (auth.anchoredFrom && att.time >= auth.anchoredFrom) return true;
+  // Fallback: trust current DNS/did.json for recent attestations (consumer policy)
+  if (auth.currentlyVerified) {
+    const sevenDaysAgo = BigInt(Math.floor(Date.now() / 1000) - 7 * 86400);
+    return att.time >= sevenDaysAgo;
+  }
+  return false;
+});
+```
 
 ## Advanced Attestation Functions
 
@@ -669,8 +804,8 @@ function createX402OfferProof(
 type VerifyProofParams = {
   proof: ProofWrapper;
   provider?: unknown;            // ethers v6 Provider (required for on-chain proofs)
-  expectedSubject?: Did;
-  expectedController?: Did;
+  expectedSubjectDid?: Did;
+  expectedControllerDid?: Did;
 };
 type VerifyProofResult = {
   valid: boolean;
@@ -805,6 +940,7 @@ function verifyDnsTxtControllerDid(
 ```
 
 - Purpose: Verify that the `_controllers.<domain>` DNS TXT record contains the expected controller DID.
+- Uses `isSameControllerId` internally for matching — handles `did:jwk` and chain-agnostic EVM address comparison.
 - `recordPrefix` defaults to `_controllers`.
 - In Node.js/server runtimes, the default export resolves DNS TXT directly.
 - In browser bundles, DNS TXT verification requires an injected `resolveTxt` function. Without one, the browser export throws `NETWORK_ERROR`.
@@ -815,10 +951,11 @@ function verifyDnsTxtControllerDid(
 ```ts
 function parseDnsTxtRecord(
   record: string
-): { version?: string; controller?: Did; [key: string]: string | undefined };
+): { version?: string; controllers: Did[]; controller?: Did };
 ```
 
-- Purpose: Parse a DNS TXT record or evidence string in `v=1;controller=did:pkh:...` format into key-value pairs. This format is used by both DNS TXT records and social profile evidence strings (§5.3.5.2).
+- Purpose: Parse a DNS TXT record or evidence string in `v=1;controller=did:pkh:...` format. A single record may contain multiple `controller=` entries (e.g., `v=1;controller=did:pkh:eip155:66238:0x...;controller=did:pkh:eip155:1:0x...`).
+- Returns `controllers` — an array of all controller DIDs found in the record. Use this field to iterate over all declared controllers.
 - Throws: `INVALID_INPUT`
 
 #### `buildDnsTxtRecord(controllerDid)`
@@ -867,16 +1004,30 @@ function verifyDidDocumentControllerDid(
 ```
 
 - Purpose: Verify that a DID document's controller or verificationMethod addresses match the expected controller DID.
+- For `did:jwk` controllers, compares against `publicKeyJwk` in verification methods.
+- For `did:pkh`, compares EVM addresses (chain-agnostic).
 
-#### `extractAddressesFromDidDocument(didDocument)`
+#### `extractEvmAddressesFromDidDocument(didDocument)`
 
 ```ts
-function extractAddressesFromDidDocument(
+function extractEvmAddressesFromDidDocument(
   didDocument: Record<string, unknown>
 ): string[];
 ```
 
-- Purpose: Extract all Ethereum addresses from a DID document's `verificationMethod` array.
+- Purpose: Extract all checksummed EVM addresses from a DID document's `verificationMethod` array (from `blockchainAccountId` and `publicKeyHex` fields).
+- **Renamed in 0.1.0-alpha.11** from `extractAddressesFromDidDocument` to clarify it is EVM-specific.
+
+#### `extractJwksFromDidDocument(didDocument)`
+
+```ts
+function extractJwksFromDidDocument(
+  didDocument: Record<string, unknown>
+): Array<Record<string, unknown>>;
+```
+
+- Purpose: Extract `publicKeyJwk` objects from verification methods in a DID document.
+- Returns an array of JWK objects found in the document's verification methods.
 
 ### Subject Ownership Helpers
 
