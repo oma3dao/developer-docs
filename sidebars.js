@@ -64,6 +64,11 @@ const sidebars = {
           type: 'category',
           label: 'HTTP APIs',
           items: [
+            'api/public-api-inventory',
+            'api/trust-anchors',
+            'api/controller-confirm',
+            'api/controller-endpoint-confirm',
+            'api/identity-resolve',
             'api/delegated-attestation',
             'api/controller-witness',
           ],
@@ -118,6 +123,11 @@ const sidebars = {
               type: 'doc',
               id: 'integrations/x402/client-attestation',
               label: 'Client Integration',
+            },
+            {
+              type: 'doc',
+              id: 'integrations/x402/client-verification',
+              label: 'Client Verification',
             },
           ],
         },

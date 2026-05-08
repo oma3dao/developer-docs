@@ -91,6 +91,212 @@ Most developers should use `normalizeDid`, `didToAddress`, and the CAIP builders
 - `buildCaip2(namespace: string, reference: string): string` — Build a CAIP-2 chain identifier string.
 - `parseCaip2(caip2: string): { namespace: string; reference: string }` — Parse a CAIP-2 string into namespace and reference. Throws `INVALID_CAIP`.
 
+## DID URL Parsing
+
+DID URLs are DIDs with a fragment (e.g., `did:web:api.example.com#key-1`). They are mutable key references — see [Definitions: DID URL vs Controller DID](/start-here/definitions#did-url-vs-controller-did).
+
+### `parseDidUrl(input)`
+
+```ts
+type ParsedDidUrl = {
+  didUrl: string;
+  did: string;
+  fragment: string;
+};
+function parseDidUrl(input: string): ParsedDidUrl;
+```
+
+- Purpose: Parse a DID URL into its components.
+- Example: `did:web:api.example.com#key-1` → `{ didUrl: "did:web:api.example.com#key-1", did: "did:web:api.example.com", fragment: "key-1" }`
+- Throws: `INVALID_DID_URL` for malformed input or empty fragments.
+
+### `isDidUrl(input)`
+
+```ts
+function isDidUrl(input: string): boolean;
+```
+
+- Purpose: Returns `true` if the string is a DID URL (has a `#` fragment with a valid base DID).
+
+### `assertBareDid(input)`
+
+```ts
+function assertBareDid(input: string): void;
+```
+
+- Purpose: Throws if the input is a DID URL. Use in functions that expect a bare subject DID and must reject DID URLs.
+- Throws: `INVALID_DID_URL`
+
+## JWK Helpers
+
+Functions for working with JSON Web Keys (JWKs) and `did:jwk` DIDs. Used for non-EVM controller identities.
+
+### `validatePublicJwk(jwk)`
+
+```ts
+type JwkValidationResult = {
+  valid: boolean;
+  reason?: string;
+};
+function validatePublicJwk(jwk: unknown): JwkValidationResult;
+```
+
+- Purpose: Validate that a JWK is a well-formed public key.
+- Checks `kty` (EC, OKP, RSA), required fields per key type, and rejects private key material (`d`, `p`, `q`, etc.).
+
+### `jwkToDidJwk(jwk)`
+
+```ts
+function jwkToDidJwk(jwk: unknown): string;
+```
+
+- Purpose: Convert a public JWK to a `did:jwk` DID.
+- Uses deterministic (sorted-key) JSON + base64url encoding.
+- Rejects private key material.
+- Throws: `INVALID_INPUT`
+
+### `didJwkToJwk(didJwk)`
+
+```ts
+type PublicJwk = Record<string, unknown>;
+function didJwkToJwk(didJwk: string): PublicJwk;
+```
+
+- Purpose: Convert a `did:jwk` DID back to a public JWK object.
+- Validates the result.
+- Throws: `INVALID_DID`
+
+### `publicJwkEquals(a, b)`
+
+```ts
+function publicJwkEquals(a: unknown, b: unknown): boolean;
+```
+
+- Purpose: Compare two public JWKs for equality.
+- Ignores property order and metadata fields (`kid`, `use`, `alg`, `key_ops`, `ext`).
+- Throws if either contains private key material.
+
+### `computeJwkThumbprint(jwk, algorithm?)`
+
+```ts
+function computeJwkThumbprint(
+  jwk: unknown,
+  algorithm?: "sha256" | "sha384" | "sha512"
+): Promise<string>;
+```
+
+- Purpose: Compute an RFC 7638 JWK Thumbprint.
+- Returns: base64url-encoded hash.
+- Default algorithm: `"sha256"`.
+
+### `formatJktValue(jwk)`
+
+```ts
+function formatJktValue(jwk: unknown): Promise<string>;
+```
+
+- Purpose: Returns `jkt=S256:<thumbprint>` format for DNS TXT records.
+
+## DID URL Key Resolution
+
+Resolve DID URLs to their underlying public key material and derive durable controller DIDs.
+
+### `resolveDidUrlToPublicKey(didUrl, options?)`
+
+```ts
+type ResolvedPublicKey = {
+  didUrl: string;
+  did: string;
+  fragment: string;
+  publicKeyJwk: Record<string, unknown>;
+  verificationMethodId: string;
+};
+function resolveDidUrlToPublicKey(
+  didUrl: string,
+  options?: { fetchDidDocument?: (domain: string) => Promise<Record<string, unknown>> }
+): Promise<ResolvedPublicKey>;
+```
+
+- Purpose: Resolve a DID URL (e.g., `did:web:api.example.com#key-1`) to public key material.
+- Fetches the DID document, finds the matching verification method, extracts and validates `publicKeyJwk`.
+- Currently supports `did:web`.
+- Throws: `INVALID_DID_URL`, `NETWORK_ERROR`
+
+### `resolveDidUrlToControllerDid(didUrl, options?)`
+
+```ts
+type ResolvedControllerDid = {
+  didUrl: string;
+  did: string;
+  fragment: string;
+  publicKeyJwk: Record<string, unknown>;
+  verificationMethodId: string;
+  controllerDid: string;
+};
+function resolveDidUrlToControllerDid(
+  didUrl: string,
+  options?: { fetchDidDocument?: (domain: string) => Promise<Record<string, unknown>> }
+): Promise<ResolvedControllerDid>;
+```
+
+- Purpose: Wraps `resolveDidUrlToPublicKey` and derives a durable `did:jwk` controller DID from the resolved key.
+- The `controllerDid` is what callers should pass to `getControllerAuthorization`. DID URLs are mutable key references — the derived `did:jwk` is the immutable controller identity.
+- Throws: `INVALID_DID_URL`, `NETWORK_ERROR`
+
+## Controller ID Comparison
+
+Functions for comparing controller DIDs across different formats and chains.
+
+### `isSameControllerId(a, b)`
+
+```ts
+function isSameControllerId(a: string, b: string): boolean;
+```
+
+- Purpose: Check if two controller DIDs refer to the same entity.
+- Three matching strategies:
+  1. Exact normalized DID string match
+  2. EVM address match (chain-agnostic) — `did:pkh:eip155:1:0xABC` matches `did:pkh:eip155:137:0xABC`
+  3. JWK material match — two `did:jwk` with the same key material but different encodings
+
+### `extractControllerEvmAddress(controllerDid)`
+
+```ts
+function extractControllerEvmAddress(controllerDid: string): string | null;
+```
+
+- Purpose: Extract the EVM address from a `did:pkh:eip155:*` DID.
+- Returns `null` for non-EVM controllers (`did:jwk`, non-eip155 `did:pkh`, etc.).
+
+## Authorization Metadata
+
+### `extractAuthorizationMetadata(result)`
+
+```ts
+type JwsVerificationResult = {
+  publicKeyDid: string;
+  resourceUrl?: string;
+  issuedAt?: number;
+  kid?: string;
+  publicKeyJwk?: Record<string, unknown>;
+};
+
+type AuthorizationMetadata = {
+  controllerDid: string;
+  subjectDid: string;
+  resourceUrl: string;
+  issuedAt: number;
+  kid: string;
+  publicKeyJwk: Record<string, unknown>;
+};
+
+function extractAuthorizationMetadata(result: JwsVerificationResult): AuthorizationMetadata;
+```
+
+- Purpose: Extract the metadata needed for a `getControllerAuthorization` call from a JWS verification result.
+- Derives `subjectDid` from `resourceUrl` (assumes `did:web` for HTTPS URLs).
+- Returns `{ controllerDid, subjectDid, resourceUrl, issuedAt, kid, publicKeyJwk }`.
+
 ## Data Utilities
 
 These functions handle JSON canonicalization (JCS / RFC 8785). They are used in proof seed construction (`constructSeed` in the reputation module).

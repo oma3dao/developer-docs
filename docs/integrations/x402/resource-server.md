@@ -284,57 +284,6 @@ resourceServer.registerExtension(createOfferReceiptExtension(offerReceiptIssuer)
 
 The key difference from the environment variable example: you never construct a `privateKeyToAccount` — instead, you pass a function that delegates signing to the provider's API.
 
-## Binding Your Signing Key to Your Service Identity
-
-Signing offers and receipts is only half the story. For verifiers to trust that your signatures are legitimate, they need to confirm that your signing key is authorized to act on behalf of your service's identity (`did:web:yourdomain.com`).
-
-There are several ways to establish this binding, from lightweight DNS records to formal on-chain attestations. Choose based on your assurance requirements.
-
-### Option 1: DID Document (`did.json`)
-
-If you're using JWS signing, you're already hosting a DID document at `/.well-known/did.json` (see [JWS setup above](#hosting-the-did-document)). This document declares which keys are authorized for your `did:web` identity. Verifiers resolve your DID and check that the signing key is listed in `verificationMethod`.  
-
-If you're using EIP-712 for signing you can use this option as well.
-
-This is the simplest option and is sufficient for many use cases. It is a well-known mechanism (pun intended).  However, the DID document is mutable.  If you remove the key later, verifiers checking at that point won't find it.  See Recommendation 1 below on how to make this mechanism immutable and give your signatures more durability.
-
-### Option 2: DNS TXT Record
-
-Publish a TXT record at `_omatrust.yourdomain.com` asserting your signing key as a controller:
-
-```
-_omatrust.yourdomain.com  TXT  "v=1;controller=did:pkh:eip155:1:0xYourSigningAddress"
-```
-
-Verifiers can look up the DNS record to confirm the binding. However, like `did.json`, DNS records are mutable. Consider pairing with a Controller Witness attestation for temporal anchoring (Recommendation 1 below).
-
-## Recommended Key Binding Practices
-
-For the strongest assurance for verifiers and the most control for you, we recommend two more key binding practices once you choose one of the above two options.
-
-### Recommendation 1: Controller Witness (Temporal Anchoring)
-
-A [Controller Witness](/reputation/attestation-types#controller-witness) attestation is issued by a third-party witness that observes your DNS TXT record or `did.json` at a specific time and anchors that observation on-chain. This solves the mutability problem: even if you later remove the DNS record, the on-chain witness attestation proves the binding existed at the observed time.
-
-Controller Witness attestations support multiple observation methods: `dns-txt`, `did-json`, `social-profile`, and `manual`. They're designed to complement Linked Identifier and Key Binding attestations.
-
-### Recommendation 2: Key Binding Attestation (On-Chain)
-
-Publish a [Key Binding](/reputation/attestation-types#key-binding) attestation on-chain. You still need to choose one of the above key binding options but the attestation declares that your signing key (`keyId`) is authorized to act on behalf of your service's DID (`subject`), with a specific `keyPurpose` (e.g., `assertionMethod` for signing offers and receipts, which is defined by the W3C). 
-
-In addition, the attestation allows you to explicitly revoke authorization if your signing key is rotated (good security practice) or compromised (good contingency planning).  It also allows you to specifiy an expiration date, after which the key is no longer authorized.
-
-Once you have set up `did.json` or DNS TXT you can submit a Key Binding attestation on the [OMATrust Reputation Portal](https://reputation.omatrust.org/attest/key-binding).  This front end automatically submits a Controller Witness attestation as well.
-
-### Which Should I Use?
-
-| Approach | Assurance Level | Persistence | Best For |
-|----------|----------------|-------------|----------|
-| `did.json` | Moderate | Mutable (web-hosted) | JWS signers already hosting a DID document |
-| DNS TXT | Moderate | Mutable (DNS) | Quick setup, works with both signing formats |
-| Key Binding | High | Immutable (on-chain) | Production services wanting maximum verifiability |
-| Controller Witness | High | Immutable (on-chain) | Anchoring mutable evidence (DNS, did.json) with a timestamp |
-
 ## Offer and Receipt Extension
 
 The Offer and Receipt extension is the technical mechanism that produces signed offers and receipts. It is specified as an optional, composable addition to x402 that works with both x402 v1 and v2.
@@ -365,6 +314,155 @@ declareOfferReceiptExtension({
 
 You can configure this per-route — different endpoints can have different settings.
 
+## Trust Tiers: Binding Your Signing Key to Your Service Identity
+
+Signing offers and receipts is only half the story. For verifiers to trust that your signatures are legitimate, they need to confirm that your signing key is authorized to act on behalf of your service's identity (`did:web:yourdomain.com`).
+
+OMATrust uses a tiered trust model. Each tier builds on the previous one, adding durability and security guarantees. You can start at Tier 1 and add higher tiers as your service matures.
+
+### Tier 1: Ephemeral Evidence (DNS TXT / did.json)
+
+The baseline. Publish your controller key(s) so verifiers can look them up in real time.
+
+**DNS TXT record** at `_controllers.yourdomain.com`:
+
+```
+_controllers.yourdomain.com  TXT  "v=1;controller=did:pkh:eip155:1:0xYourEIP712SigningAddress;controller=did:jwk:eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6Ii4uLiIsInkiOiIuLi4ifQ"
+```
+
+A single TXT record can declare multiple controllers — one per signing key. Use `did:pkh:eip155:<chainId>:<address>` for EVM keys and `did:jwk:<base64url-encoded-public-key>` for JWS keys.  However, note that TXT records have a 255 character limit so can only safely store 1 `did:jwk` controller.
+
+**DID document** at `https://yourdomain.com/.well-known/did.json`:
+
+```json
+{
+  "@context": ["https://www.w3.org/ns/did/v1", "https://w3id.org/security/suites/jws-2020/v1"],
+  "id": "did:web:yourdomain.com",
+  "verificationMethod": [
+    {
+      "id": "did:web:yourdomain.com#eip712-key",
+      "type": "EcdsaSecp256k1RecoveryMethod2020",
+      "controller": "did:web:yourdomain.com",
+      "blockchainAccountId": "eip155:1:0xYourEIP712SigningAddress"
+    },
+    {
+      "id": "did:web:yourdomain.com#jws-key",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:yourdomain.com",
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "...",
+        "y": "..."
+      }
+    }
+  ],
+  "assertionMethod": ["did:web:yourdomain.com#eip712-key", "did:web:yourdomain.com#jws-key"]
+}
+```
+
+:::tip Enable DNSSEC
+If you use DNS TXT records, enable DNSSEC on your domain. Without DNSSEC, DNS responses can be spoofed — an attacker could inject a false controller record. DNSSEC cryptographically signs DNS responses, giving verifiers confidence that the record is authentic. Most registrars support DNSSEC with a one-click enable.
+
+Without DNSSEC, verifiers may reduce the trust level of DNS-based evidence.
+:::
+
+**Limitations of Tier 1:** This evidence is mutable. If you remove or change the DNS record or DID document, verifiers checking *after* the change won't find the key. This means:
+
+- Old receipts signed by a rotated key become unverifiable
+- If your DNS or web server is temporarily down, all verification fails
+- There's no historical proof that the key was ever authorized
+
+Tier 1 is sufficient for real-time verification of recent receipts. For durable trust, add Tier 2.
+
+### Tier 2: Controller Witness (Temporal Anchoring)
+
+A [Controller Witness](/api/controller-witness) attestation is an immutable on-chain record that a trusted third party observed your controller evidence at a specific point in time. This solves the fundamental problem with mutable evidence: **keys change, but the past doesn't.**
+
+**Why this matters:**
+
+- **Key rotation.** Good security practice means rotating signing keys periodically. When you rotate, you remove the old key from DNS/did.json. Without a witness, all receipts signed by the old key become unverifiable — even though they were legitimate when signed.
+
+- **Key compromise.** If a key is stolen, you revoke it immediately. But receipts signed *before* the compromise are still valid. A controller witness proves the key was authorized during the period before compromise, preserving the validity of those earlier receipts.
+
+- **Algorithm migration.** Moving from RSA to elliptic curve to quantum-resistant keys means old keys disappear from your current evidence. Witnesses preserve the historical record of each key's authorization period.
+
+- **Infrastructure disruptions.** DNS outages, registrar migrations, server downtime, CDN misconfigurations — any of these can make your live evidence temporarily unreachable. A controller witness means verification doesn't depend on a single live endpoint being available at the moment someone checks.
+
+**How to get a Controller Witness:**
+
+Option A — Call the [Controller Witness API](/api/controller-witness):
+
+```ts
+import { requestControllerWitness } from "@oma3/omatrust/reputation";
+
+await requestControllerWitness({
+  subjectDid: "did:web:yourdomain.com",
+  controllerDid: "did:pkh:eip155:1:0xYourSigningAddress",
+});
+```
+
+Option B — Use the [OMATrust Reputation Portal](https://app.omatrust.org) and follow the Controller Witness flow in the UI.
+
+The witness checks your DNS TXT and/or did.json, confirms the controller key is published, and anchors that observation on-chain with a timestamp. From that point forward, verifiers can confirm the key was authorized at `observedAt` regardless of what your live evidence says today.
+
+**When to file a Controller Witness:**
+
+- As soon as possible, preferably before using the key for signing
+- Absolutely before the key is taken out of service
+- Optional- file additional Controller Witness attestations periodically (verifiers may discount keys used for too long without another Controller Witness) 
+
+### Tier 3: Key Binding (Full Lifecycle Control)
+
+A [Key Binding](/reputation/attestation-types#key-binding) attestation gives you enterprise-grade control over your signing key's lifecycle:
+
+- **Purpose declaration** — declare what the key is authorized to do (e.g., `assertionMethod` for signing offers and receipts). A key authorized only for `authentication` cannot legitimately sign commercial artifacts.
+- **Expiration** — set a time limit on the key's authorization. After expiration, verifiers reject signatures from that key for any timestamp after the expiry.
+- **Revocation** — explicitly revoke a key if it's compromised or retired. Revocation closes the authorization window at a specific point in time.
+
+**Key Bindings require a Controller Witness.** The Controller Witness proves that the Key Binding was submitted by a party legitimately authorized by the subject. Without it, anyone could publish a Key Binding claiming to control your service. The witness anchors the authorization chain: your DNS/did.json declares the controller → the witness observes and anchors that declaration → the Key Binding declares the key's purpose and lifecycle.
+
+**How to submit a Key Binding:**
+
+Use the [OMATrust Reputation Portal](https://app.omatrust.org/attest/key-binding). The portal automatically submits a Controller Witness alongside the Key Binding.
+
+Or use the SDK to submit both programmatically:
+
+```ts
+import { requestControllerWitness, submitAttestation } from "@oma3/omatrust/reputation";
+
+// 1. Anchor the controller evidence
+await requestControllerWitness({
+  subjectDid: "did:web:yourdomain.com",
+  controllerDid: "did:pkh:eip155:1:0xYourSigningAddress",
+});
+
+// 2. Submit the Key Binding attestation
+await submitAttestation({
+  signer,
+  chainId: 66238,
+  easContractAddress: "0x...",
+  schemaUid: "0x807b...",
+  schema: "string subject, string keyId, string keyPurpose, ...",
+  data: {
+    subject: "did:web:yourdomain.com",
+    keyId: "did:pkh:eip155:1:0xYourSigningAddress",
+    keyPurpose: "assertionMethod",
+    // ...
+  },
+});
+```
+
+### Trust Tier Summary
+
+| Tier | Mechanism | Durability | What It Proves |
+|------|-----------|------------|----------------|
+| 1 | DNS TXT / did.json | Mutable (live lookup) | Key is authorized *right now* |
+| 2 | Controller Witness | Immutable (on-chain) | Key was authorized at a specific point in time |
+| 3 | Key Binding | Immutable (on-chain) | Key's purpose, expiration, and revocation status |
+
+Start with Tier 1 to get up and running. Add Tier 2 if you want additional trust. Add Tier 3 when you need explicit lifecycle control or purpose-scoped authorization.
+
 ## How Receipts Become Attestation Proofs
 
 The receipts your server signs are designed to be portable. A client who receives a receipt can later submit it as a `proof` object in an OMATrust [User Review](/reputation/attestation-types#user-review) attestation:
@@ -388,6 +486,8 @@ User Review Responses don't carry proofs — verification is based on confirming
 
 - [x402 Overview](./overview) — How x402 and OMATrust fit together
 - [Client Integration](./client-attestation) — Client-side receipt capture and attestation submission
+- [Client Verification](./client-verification) — How verifiers check x402 proofs and authorization
 - [Offer and Receipt Extension Specification](https://github.com/coinbase/x402/blob/main/specs/extensions/extension-offer-and-receipt.md) — Full protocol spec
 - [Attestation Types](/reputation/attestation-types) — User Review schema and proof types
 - [Verification Flow](/reputation/verification-flow) — How proofs are verified
+- [Controller Witness API](/api/controller-witness) — The witness attestation endpoint

@@ -31,30 +31,27 @@ This creates a natural integration point for OMATrust:
 
 ## How It Works
 
-```
-┌─────────┐                      ┌─────────────────┐
-│  Client  │                      │ Resource Server  │
-└────┬─────┘                      └────────┬─────────┘
-     │                                     │
-     │  GET /resource                      │
-     │ ───────────────────────────────────►│
-     │                                     │
-     │  402 + Payment Terms                │
-     │     + Signed Offer(s)               │
-     │ ◄───────────────────────────────────│
-     │                                     │
-     │  GET /resource + Payment Header     │
-     │ ───────────────────────────────────►│
-     │                                     │
-     │  200 + Resource                     │
-     │     + Signed Receipt                │
-     │ ◄───────────────────────────────────│
-     │                                     │
-     │  ┌──────────────────────┐           │
-     │  │ Submit receipt as    │           │
-     │  │ proof in OMATrust    │           │
-     │  │ User Review          │           │
-     │  └──────────────────────┘           │
+```text
+ Client                              Resource Server
+   |                                       |
+   |  GET /resource                        |
+   |--------------------------------------►|
+   |                                       |
+   |  402 + Payment Terms                  |
+   |     + Signed Offer(s)                 |
+   |◄--------------------------------------|
+   |                                       |
+   |  GET /resource + Payment Header       |
+   |--------------------------------------►|
+   |                                       |
+   |  200 + Resource                       |
+   |     + Signed Receipt                  |
+   |◄--------------------------------------|
+   |                                       |
+   |  ┌─────────────────────────┐          |
+   |  │ Submit receipt as proof │          |
+   |  │ in OMATrust User Review │          |
+   |  └─────────────────────────┘          |
 ```
 
 1. Client requests a paid resource
@@ -67,6 +64,7 @@ This creates a natural integration point for OMATrust:
 
 - **[Resource Server Integration](./resource-server)** — For service operators: add offer-receipt signing to your x402 server
 - **[Client Integration](./client-attestation)** — For clients: capture receipts and submit attestations to OMATrust
+- **[Client Verification](./client-verification)** — For verifiers: cryptographically verify x402 proofs and check authorization
 
 ## Further Reading
 

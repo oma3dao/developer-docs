@@ -208,14 +208,12 @@ Both `x402-receipt` and `x402-offer` are valid proof types for User Reviews. A r
 
 ## Proof Verification by Consumers
 
-When a consumer (another client, an aggregator, a trust scoring engine) encounters your review, they verify the proof by:
+For details on how consumers (aggregators, trust scoring engines, other clients) verify x402 proofs attached to User Reviews, see the dedicated [Client Verification](./client-verification) guide. That guide covers:
 
-1. Extracting the `proofObject` (the signed receipt or offer)
-2. Verifying the signature — JWS signatures are verified by resolving the signer's `did:web` to find the public key; EIP-712 signatures are verified by recovering the signer address directly
-3. Checking that the receipt's `resourceUrl` maps to the review's `subject` DID
-4. Confirming the receipt's `payer` matches the review's `attester`
-
-If all checks pass, the review is classified as "verified" — the reviewer demonstrably used the service. See [Verification Flow](/reputation/verification-flow) for the full verification process.
+- Cryptographic signature verification (JWS and EIP-712 paths)
+- The verification → authorization flow
+- Using `getControllerAuthorization` to check key authorization windows
+- Trust tier evaluation
 
 ## Wallet Identity and Attestation Signing
 
@@ -232,7 +230,13 @@ There are two approaches:
 
 You already have a wallet — it's the one making x402 payments. Use that same wallet to sign attestations and the receipt's `payer` and the attestation's `attester` match automatically. No identity binding, no extra configuration.
 
-When submitting attestations to OMATrust, clients use the [Delegated Attestation API](/api/delegated-attestation) — you sign an EIP-712 typed message off-chain, and the OMATrust reputation server submits the on-chain transaction on your behalf (paying gas). Your wallet only needs to support `signTypedData` for EIP-712. It does not need to hold native tokens on OMAChain or submit any on-chain transactions directly.
+You have two options for submitting attestations on-chain:
+
+1. **Delegated Attestation API** (gas-free) — You sign an EIP-712 typed message off-chain, and the OMATrust reputation server submits the on-chain transaction on your behalf, paying gas. Your wallet only needs to support `signTypedData`. See the [Delegated Attestation API](/api/delegated-attestation).
+
+2. **Direct submission** — Send the attestation transaction directly to the EAS contract via any OMAChain RPC endpoint. Your wallet pays gas in the chain's native token. Use `submitAttestation` from the SDK or call the EAS contract directly.
+
+The delegated path is simpler for most clients — no native tokens needed. Direct submission gives you full control and doesn't depend on the OMATrust relay.
 
 Any managed wallet provider that supports both x402 payments and `signTypedData` works here — one wallet handles both flows. [Coinbase AgentKit](https://docs.cdp.coinbase.com/) is a natural fit, since it handles x402 payments and EIP-712 signing in a single managed wallet.
 
@@ -244,12 +248,23 @@ This path assumes your x402 payments are on an EVM chain. If you're paying on a 
 
 For enterprise or high-security deployments, you may want to keep your payment wallet separate from your attestation signing wallet. This limits exposure — if the attestation key is compromised, your payment wallet is unaffected, and vice versa.
 
-The tradeoff: since the receipt's `payer` (your payment wallet) won't match the attestation's `attester` (your signing wallet), verifiers can't automatically confirm they belong to the same entity. You need to explicitly bind the two wallets together using one of these OMATrust Support Attestations:
+The tradeoff: since the receipt's `payer` (your payment wallet) won't match the attestation's `attester` (your signing wallet), verifiers can't automatically confirm they belong to the same entity. You need to explicitly bind the two wallets together.
 
-- **[Linked Identifier](/reputation/attestation-types#linked-identifier)** — Asserts that two DIDs are controlled by the same entity. Set your primary identity as the `subject` and the other wallet as the `linkedId`. Requires a proof of shared control (`pop-eip712` or `pop-jws`).
-- **[Key Binding](/reputation/attestation-types#key-binding)** — Declares that a specific key is authorized to act on behalf of a subject DID, with a defined `keyPurpose` (e.g., `assertionMethod`). Provides lifecycle management: expiration, rotation, and revocation.
+#### Option A: Linked Identifier
 
-Both attestation types must be revocable and require a `shared-control` proof. Once published, verifiers can trace the chain from the receipt's `payer` to the attestation's `attester` and confirm they're the same entity.
+A [Linked Identifier](/reputation/attestation-types#linked-identifier) asserts that two DIDs are controlled by the same entity. Set your primary identity as the `subject` and the other wallet as the `linkedId`. Requires a proof of shared control (`pop-eip712` or `pop-jws`).
+
+#### Option B: Key Binding
+
+A [Key Binding](/reputation/attestation-types#key-binding) declares that a specific key is authorized to act on behalf of a subject DID. There are two ways to link a paying wallet and a signing wallet using Key Bindings:
+
+1. **Two Key Bindings to the service identity** — Bind both keys to your `did:web` subject. Each Key Binding declares one wallet as an authorized controller of the service. Verifiers see that both wallets are authorized for the same subject and infer they belong to the same entity.
+
+2. **One Key Binding between the wallets** — Create a single Key Binding where the `subject` is one wallet's DID (e.g., the payment wallet as `did:pkh:eip155:1:0xPayer`) and the `keyId` (controller) is the other wallet. This directly declares that the signing wallet is authorized to act on behalf of the payment wallet.
+
+Key Bindings provide lifecycle management (expiration, rotation, revocation) and purpose declaration (`keyPurpose`), making them the stronger option for production deployments.
+
+Both Linked Identifiers and Key Bindings must be revocable and require a `shared-control` proof. Once published, verifiers can trace the chain from the receipt's `payer` to the attestation's `attester` and confirm they're the same entity.
 
 :::warning Storing Keys in Environment Variables
 Avoid storing private keys in environment variables. Private keys in environment variables can leak through process inspection, logging, crash dumps, and container metadata endpoints. Use a managed wallet provider that keeps keys in secure hardware or managed infrastructure.
@@ -337,6 +352,7 @@ console.log("User Review attestation ready:", JSON.stringify(attestation, null, 
 ## Further Reading
 
 - [Resource Server Integration](./resource-server) — Set up offer-receipt signing on your server
+- [Client Verification](./client-verification) — Verify x402 proofs and check authorization
 - [x402 Overview](./overview) — How x402 and OMATrust fit together
 - [Attestation Types](/reputation/attestation-types) — User Review schema and proof types
 - [Verification Flow](/reputation/verification-flow) — How proofs are verified

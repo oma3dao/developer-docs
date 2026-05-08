@@ -32,7 +32,7 @@ The full JSON Schema files with all properties, validation rules, and OMA3 exten
 Each file is self-contained (aside from `$ref` imports from `common.schema.json`) and includes:
 
 - Standard JSON Schema validation (`type`, `pattern`, `maxLength`, `enum`, `required`, etc.)
-- OMA3 custom extensions (`x-oma3-skip-reason`, `x-oma3-subtype`, `x-oma3-default`, `x-oma3-did-methods`, `x-oma3-enum`, `x-oma3-nested`, `x-oma3-witness`)
+- OMA3 custom extensions (`x-oma3-skip-reason`, `x-oma3-subtype`, `x-oma3-default`, `x-oma3-did-methods`, `x-oma3-enum`, `x-oma3-nested`)
 
 ## OMA3 Schema Extensions
 
@@ -46,7 +46,6 @@ The schemas use custom `x-oma3-*` properties to control UI rendering, auto-gener
 | `x-oma3-did-methods` | Recommended DID methods for a field (`"web"`, `"pkh"`, `"key"`, `"handle"`) |
 | `x-oma3-enum` | Suggested values without strict validation (for extensible registries) |
 | `x-oma3-nested` | Controls whether an object field renders as a grouped container in UIs |
-| `x-oma3-witness` | Top-level flag that triggers a Controller Witness API call after attestation |
 
 For full documentation on each extension with examples, see the [`schemas-json/README.md`](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/README.md) in the repository.
 

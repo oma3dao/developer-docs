@@ -822,10 +822,141 @@ function verifyProof(
 - For `tx-interaction`: fetches the transaction and confirms sender/recipient match the expected attester/subject.
 - For `pop-eip712`: recovers the signer from the EIP-712 signature and validates against the canonical OMATrust schema.
 - For `pop-jws`: validates the JWS signature against the embedded JWK and checks claims.
-- For `x402-receipt`: validates the receipt per the x402 Signed Offer and Service Receipt Extension spec.
-- For `x402-offer`: validates the offer per the x402 spec.
+- For `x402-receipt` with `format: "jws"`: performs cryptographic JWS verification, returns `did:jwk` as the durable controller DID.
+- For `x402-receipt` with `format: "eip712"`: performs cryptographic EIP-712 verification, recovers the signer address.
+- For `x402-offer` with `format: "jws"`: performs cryptographic JWS verification.
+- For `x402-offer` with `format: "eip712"`: performs cryptographic EIP-712 verification.
+- For `x402-receipt`/`x402-offer` with other formats: backward-compatible shape-only validation.
 - For `evidence-pointer`: fetches the URL and validates the evidence artifact (embedded crypto proof or handle-link statement).
 - Throws: `PROOF_VERIFICATION_FAILED`, `NETWORK_ERROR`
+
+### x402 JWS Verification
+
+These functions verify x402 signed offers and receipts that use JWS Compact Serialization. They support two key resolution paths: embedded `jwk` (self-contained, offline-verifiable) and `kid` resolution (resolves a DID URL to find the public key).
+
+All JWS verification functions return a `did:jwk` as the durable controller DID. This is the identity you pass to `getControllerAuthorization` — not the `kid` DID URL, which is a mutable reference.
+
+For the full verification → authorization flow, see [Client Verification](/integrations/x402/client-verification).
+
+#### `verifyX402JwsArtifact(artifact, options?)`
+
+```ts
+type X402JwsArtifact = {
+  format: "jws";
+  signature: string;             // JWS Compact Serialization
+};
+
+type JwsVerificationResult = {
+  valid: true;
+  header: Record<string, unknown>;
+  payload: Record<string, unknown>;
+  kid: string;
+  publicKeyJwk: Record<string, unknown>;
+  publicKeySource: "embedded-jwk" | "kid-resolution";
+  publicKeyDid: string;          // did:jwk — durable controller DID
+};
+
+type JwsVerificationFailure = {
+  valid: false;
+  error: { code: string; message: string };
+};
+
+type JwsVerifyOptions = {
+  fetchDidDocument?: (domain: string) => Promise<Record<string, unknown>>;
+};
+
+function verifyX402JwsArtifact(
+  artifact: X402JwsArtifact,
+  options?: JwsVerifyOptions
+): Promise<JwsVerificationResult | JwsVerificationFailure>;
+```
+
+- Purpose: Core JWS verification for any x402 artifact. Parses the compact JWS, obtains the public key (from embedded `jwk` or by resolving `kid`), verifies the signature, and derives the `did:jwk`.
+- Does not validate payload shape — use `verifyX402JwsOffer` or `verifyX402JwsReceipt` for payload validation.
+- When both `kid` and `jwk` are present, uses `jwk` for verification and rejects if `kid` resolves to a conflicting key.
+- Throws: `PROOF_VERIFICATION_FAILED`
+
+#### `verifyX402JwsOffer(artifact, options?)`
+
+```ts
+function verifyX402JwsOffer(
+  artifact: X402JwsArtifact,
+  options?: JwsVerifyOptions
+): Promise<JwsVerificationResult | JwsVerificationFailure>;
+```
+
+- Purpose: Verify a JWS-signed x402 offer. Performs signature verification and validates the offer payload contains required fields: `version`, `resourceUrl`, `scheme`, `network`, `asset`, `payTo`, `amount`.
+- Throws: `PROOF_VERIFICATION_FAILED`
+
+#### `verifyX402JwsReceipt(artifact, options?)`
+
+```ts
+function verifyX402JwsReceipt(
+  artifact: X402JwsArtifact,
+  options?: JwsVerifyOptions
+): Promise<JwsVerificationResult | JwsVerificationFailure>;
+```
+
+- Purpose: Verify a JWS-signed x402 receipt. Performs signature verification and validates the receipt payload contains required fields: `version`, `network`, `resourceUrl`, `payer`, `issuedAt`.
+- Throws: `PROOF_VERIFICATION_FAILED`
+
+### x402 EIP-712 Verification
+
+These functions verify x402 signed offers and receipts that use EIP-712 typed-data signatures. The signer address is recovered directly from the signature — no DID resolution needed.
+
+All EIP-712 artifacts use a fixed domain (`name: "x402 offer"/"x402 receipt"`, `version: "1"`, `chainId: 1`). The `chainId: 1` is intentional — EIP-712 is used as an off-chain signing format; the actual payment network is in the payload.
+
+#### `verifyX402Eip712Artifact(artifact, artifactType)`
+
+```ts
+type X402Eip712Artifact = {
+  format: "eip712";
+  payload: Record<string, unknown>;
+  signature: string;             // hex-encoded, 0x-prefixed, 65 bytes
+};
+
+type Eip712VerificationResult = {
+  valid: true;
+  payload: Record<string, unknown>;
+  signer: string;                // recovered EVM address (checksummed)
+  artifactType: "offer" | "receipt";
+};
+
+type Eip712VerificationFailure = {
+  valid: false;
+  error: { code: string; message: string };
+  payload?: Record<string, unknown>;
+  signer?: string;
+};
+
+function verifyX402Eip712Artifact(
+  artifact: X402Eip712Artifact,
+  artifactType: "offer" | "receipt"
+): Eip712VerificationResult | Eip712VerificationFailure;
+```
+
+- Purpose: Core EIP-712 verification for any x402 artifact. Constructs the canonical EIP-712 typed data, recovers the signer address, and validates the payload shape.
+- Throws: `PROOF_VERIFICATION_FAILED`
+
+#### `verifyX402Eip712Offer(artifact)`
+
+```ts
+function verifyX402Eip712Offer(
+  artifact: X402Eip712Artifact
+): Eip712VerificationResult | Eip712VerificationFailure;
+```
+
+- Purpose: Verify an EIP-712-signed x402 offer. Recovers the signer and validates offer payload fields.
+
+#### `verifyX402Eip712Receipt(artifact)`
+
+```ts
+function verifyX402Eip712Receipt(
+  artifact: X402Eip712Artifact
+): Eip712VerificationResult | Eip712VerificationFailure;
+```
+
+- Purpose: Verify an EIP-712-signed x402 receipt. Recovers the signer and validates receipt payload fields.
 
 ### tx-encoded-value Helpers
 

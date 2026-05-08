@@ -73,10 +73,10 @@ Spec: [Proof Specification §5.3.3](https://github.com/oma3dao/omatrust-docs/blo
 **`pop-jws`** — A compact JSON Web Signature (JWS). Used for non-EVM signers (PGP, SSH, Ed25519, etc.). The subject's key signs a JWS with claims identifying the subject, controller, and purpose.
 Spec: [Proof Specification §5.3.2](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md)
 
-**`x402-receipt`** — A service receipt from the x402 protocol proving that the service acknowledged payment and attested to successful delivery. The highest-confidence commercial interaction proof — it proves the reviewer actually paid for and received the service.
+**`x402-receipt`** — A service receipt from the x402 protocol proving that the service acknowledged payment and attested to successful delivery. The highest-confidence commercial interaction proof — it proves the reviewer actually paid for and received the service. Supports two signature formats: JWS (returns `did:jwk` as durable controller DID) and EIP-712 (recovers signer address). Both require an external authorization check to confirm the signing key is authorized for the service.
 Spec: [Proof Specification §5.3.4](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md)
 
-**`x402-offer`** — A signed offer from the x402 protocol proving that a service committed to specific commercial terms before payment. Does not prove payment or delivery — only that the offer was made.
+**`x402-offer`** — A signed offer from the x402 protocol proving that a service committed to specific commercial terms before payment. Does not prove payment or delivery — only that the offer was made. Like receipts, supports JWS and EIP-712 signature formats with the same verification → authorization flow.
 Spec: [Proof Specification §5.3.8](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-proofs.md)
 
 **`evidence-pointer`** — A URL pointing to a publicly accessible evidence artifact. The evidence can be an embedded cryptographic proof or a handle-link statement (`v=1;controller=<DID>`). Used for non-signer identifiers (social handles, DNS names) where the trust anchor is location control rather than a signature.
@@ -123,8 +123,12 @@ For high-confidence user feedback:
 
 1. User interacts with a service via x402 and receives a signed receipt
 2. User creates a User Review attestation including the `x402-receipt` as a proof
-3. Consumer fetches the review, verifies the receipt, confirms the receipt's service DID matches the review's `subject`
-4. The review is classified as "verified" — the reviewer demonstrably used the service
+3. Consumer fetches the review and verifies the receipt signature (JWS or EIP-712)
+4. Consumer checks that the signing key is authorized for the service (via `getControllerAuthorization` or by comparing the EIP-712 signer to `payTo`)
+5. Consumer confirms the receipt's `resourceUrl` maps to the review's `subject` DID
+6. The review is classified as "verified" — the reviewer demonstrably used the service
+
+See [Client Verification](/integrations/x402/client-verification) for the full verification → authorization flow with code examples.
 
 ### Pattern 3: Security Assessment Check
 
