@@ -150,7 +150,7 @@ function createSigningBridge(options: SigningBridgeOptions): SigningBridge;
 |---------------------|-----------------------------------------------|----------|-----------------------------------------------------------------------------------|
 | `iframeId`          | `string`                                      | Yes      | The ID of the iframe element containing the widget.                               |
 | `signTypedData`     | `(domain, types, message) => Promise<string>` | Yes      | Callback to sign EIP-712 typed data. Must return the hex signature.               |
-| `devOriginOverride` | `string`                                      | No       | Override origin for local dev (e.g., `http://localhost:3000`). In production, origin is derived from the OMA3 trust policy. |
+| `devOriginOverride` | `string`                                      | No       | Override origin for local dev (e.g., `http://localhost:3000`). In production, origin is derived from the OMA3 trust anchors. |
 
 ### Return value
 

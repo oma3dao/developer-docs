@@ -61,16 +61,65 @@ See [OMATrust Identity Specification §5.3.2](https://github.com/oma3dao/omatrus
 
 | Term | Definition |
 |------|-----------|
+| Subject DID | The DID of the entity being attested about. Always a **bare DID** (no fragment). Typically `did:web:example.com` for services or `did:pkh:eip155:1:0xABC...` for smart contracts. Subject DIDs are mutable references — the entity behind them can change keys, rotate controllers, or update their DID document. |
+| Controller DID | The DID of the entity authorized to act on behalf of a subject. A controller DID is always a **private-key DID** — it represents a specific cryptographic key. Two forms: `did:pkh:eip155:<chainId>:<address>` for EVM wallets, and `did:jwk:<base64url-encoded-public-key>` for non-EVM keys. Controller DIDs are the **immutable identity** in the system — they are derived directly from key material and cannot change. |
+| DID URL | A DID with a fragment (e.g., `did:web:api.example.com#key-1`). A DID URL is a **mutable key reference** — it points to a verification method in a DID document, but the key at that location can change if the document is updated. DID URLs are not controller DIDs. To get the durable controller identity from a DID URL, resolve it to its public key and derive a `did:jwk`. See [DID URL vs Controller DID](#did-url-vs-controller-did). |
 | did:web | A DID method that uses a web domain as the identifier. `did:web:example.com` resolves to a DID document hosted at `https://example.com/.well-known/did.json`. Commonly used for services and organizations. |
 | did:pkh | A DID method derived from a blockchain account address. `did:pkh:eip155:1:0xABC...` represents an Ethereum address. Used for smart contracts and wallets. |
+| did:jwk | A DID method where the identifier is a base64url-encoded public JWK. Self-certifying and immutable — the DID encodes the key material directly. Used as the durable controller identity for non-EVM keys. |
 | did:handle | A DID method representing a social platform handle. `did:handle:twitter:alice` represents a Twitter account. Used for cross-platform identity linking. |
 | did:key | A DID method where the identifier is a public key itself. Self-certifying — the DID encodes the key directly. |
 | Linked Identifier | A Support Attestation asserting that two DIDs are controlled by the same entity. Used for cross-platform identity linkage. |
 | Key Binding | A Support Attestation declaring that a specific cryptographic key is authorized to act on behalf of a subject DID. Includes lifecycle management (rotation, expiration, revocation). |
-| Controller Witness | A Support Attestation from a third-party witness anchoring a timestamped observation that a subject asserted a particular controller via mutable offchain state (DNS, DID document, social profile). |
+| Controller Witness | A Support Attestation from a third-party witness anchoring a timestamped observation that a subject asserted a particular controller via mutable offchain state (DNS, DID document, social profile). The `subject` field is the DID being pinned (mutable reference), and the `controller` field is the `did:jwk` or `did:pkh` (immutable key material). |
 | Support Attestation | An attestation that establishes identity relationships (Linked Identifier, Key Binding, Controller Witness). These are the foundation that Reputation Attestations depend on. |
 | Reputation Attestation | An attestation that carries a trust signal about a service (User Review, Endorsement, Certification, Security Assessment). |
 | Authorization Set | The set of public keys that a service has published or attested as authorized to sign on its behalf. |
+
+## DID URL vs Controller DID {#did-url-vs-controller-did}
+
+A DID URL like `did:web:api.example.com#key-1` is a **mutable key reference**. It points to a verification method in a DID document, but the key at that location can change if the document owner updates it. This makes DID URLs unsuitable as durable controller identities.
+
+The **controller DID** is always derived from the key material itself:
+
+- For EVM keys: `did:pkh:eip155:<chainId>:<address>` — derived from the secp256k1 public key
+- For non-EVM keys: `did:jwk:<base64url-encoded-JWK>` — encodes the public key directly
+
+**Resolution flow:** When you have a DID URL (e.g., from a JWS `kid` header), resolve it to the actual public key, then derive the durable controller DID:
+
+```ts
+import { resolveDidUrlToControllerDid } from "@oma3/omatrust/identity";
+
+// DID URL → resolve → extract publicKeyJwk → derive did:jwk
+const resolved = await resolveDidUrlToControllerDid("did:web:api.example.com#key-1");
+// resolved.controllerDid = "did:jwk:eyJrdHkiOiJFQyIs..."
+```
+
+The `controllerDid` is what you pass to `getControllerAuthorization`. The DID URL is what gets recorded in Controller Witness attestations as the subject (the mutable reference being pinned at a point in time).
+
+**Authorization flow after JWS verification:**
+
+```ts
+import { extractAuthorizationMetadata } from "@oma3/omatrust/identity";
+import { getControllerAuthorization } from "@oma3/omatrust/reputation";
+
+// 1. Verify JWS → get JwsVerificationResult with publicKeyDid (the did:jwk)
+// 2. Extract metadata for authorization check
+const meta = extractAuthorizationMetadata(jwsVerificationResult);
+// meta = { controllerDid, subjectDid, resourceUrl, issuedAt, kid, publicKeyJwk }
+
+// 3. Check authorization window
+const auth = await getControllerAuthorization({
+  controllerDid: meta.controllerDid,
+  subjectDid: meta.subjectDid,
+  provider,
+});
+```
+
+**Controller ID comparison** uses `isSameControllerId()` which handles three matching strategies:
+1. Exact normalized DID string match
+2. EVM address match (chain-agnostic) — `did:pkh:eip155:1:0xABC` matches `did:pkh:eip155:137:0xABC`
+3. JWK material match — two `did:jwk` with the same key material but different encodings
 
 ## Proof Terms
 
