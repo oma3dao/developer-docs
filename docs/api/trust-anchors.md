@@ -40,7 +40,9 @@ GET https://api.omatrust.org/v1/trust-anchors
         {
           "address": "0x6f05D46...",
           "label": "OMA3 Testnet Attestation",
-          "schemas": ["security-assessment", "certification"]
+          "schemas": ["security-assessment", "certification"],
+          "status": "active",
+          "validFrom": "2026-05-01T00:00:00Z"
         }
       ]
     }
@@ -65,6 +67,9 @@ GET https://api.omatrust.org/v1/trust-anchors
 | `registries[].issuers[].address` | string | Wallet address or DID of the approved issuer. |
 | `registries[].issuers[].label` | string | Human-readable label for the issuer. |
 | `registries[].issuers[].schemas` | string[] | Schema names this issuer is approved for (e.g., `["certification"]`). |
+| `registries[].issuers[].status` | string | `"active"` or `"revoked"`. Revoked issuers remain in the list for historical verification. |
+| `registries[].issuers[].validFrom` | string | ISO 8601 timestamp when the issuer's approval became effective. |
+| `registries[].issuers[].revokedAt` | string? | ISO 8601 timestamp when the issuer was revoked. Only present when `status` is `"revoked"`. |
 
 ## Verifier Workflow
 
@@ -74,6 +79,11 @@ A verifier client can use trust anchors to validate attestations:
 2. Look up the schema UID by name: `chains["eip155:66238"].schemas["certification"]`
 3. Query EAS for attestations with that schema UID
 4. Filter results: check if the attester address appears in `registries[0].issuers` with the matching schema name in their `schemas` array
+5. Check temporal validity: verify that the attestation timestamp falls within the issuer's approval window (`validFrom <= attestation.time` and, if `revokedAt` is present, `attestation.time < revokedAt`)
+
+:::info
+Revoked issuers remain in the response so that clients can still validate attestations issued during the issuer's active period. Clients checking current trust should filter to `status === "active"` only.
+:::
 
 ## Method and CORS
 

@@ -59,16 +59,34 @@ See [OMATrust Identity Specification §5.3.2](https://github.com/oma3dao/omatrus
 
 ## Identity Terms
 
+### Supported DID Methods
+
+OMATrust uses five DID methods. Each serves a distinct purpose in the identity model.
+
+| Method | Format | Purpose | Signer? |
+|--------|--------|---------|---------|
+| `did:web` | `did:web:example.com` | Domain-based identity for services and organizations. Resolves to a DID document at `/.well-known/did.json`. | Via bound keys |
+| `did:pkh` | `did:pkh:eip155:1:0xABC...` | Blockchain account identity. Uses CAIP-10 addressing — supports EVM, Solana, and other chains. The canonical method for wallet-based identities. | Yes |
+| `did:jwk` | `did:jwk:eyJrdHkiOi...` | Key-based identity for non-blockchain signing keys. The DID encodes the public JWK directly — immutable and self-certifying. Used as the durable controller identity for JWS signers. | Yes |
+| `did:artifact` | `did:artifact:bafkrei...` | Content-addressed identity for immutable artifacts (files, packages, JSON documents). The identifier is a CIDv1 encoding the SHA-256 hash of the artifact's canonical bytes. Self-verifying — any party can recompute and confirm. No keys, no controllers. | No |
+| `did:handle` | `did:handle:twitter:alice` | Platform-assigned identity for social accounts. Non-signer — relies on evidence-pointer proofs placed at platform-controlled locations. | No |
+
+### Deprecated DID Methods
+
+These methods are not supported for new attestations. Existing identifiers should be migrated using the SDK conversion functions.
+
+| Method | Replaced By | Migration |
+|--------|-------------|-----------|
+| `did:ethr` | `did:pkh:eip155` | `did:ethr` was Ethereum-only. `did:pkh` is chain-agnostic (supports EVM, Solana, Cosmos, etc.) with standard CAIP-10 addressing. Use `didEthrToDidPkh()` to convert. |
+| `did:key` | `did:jwk` | `did:key` stores compressed multicodec keys that can't cleanly round-trip to JWK for EC curves. `did:jwk` uses the standard JWK format directly — no ambiguity, no decompression needed. Use `didKeyToDidJwk()` for Ed25519/X25519 keys. For EVM wallet keys stored as `did:key`, use `didEthrToDidPkh()` instead. |
+
+### Identity Concepts
+
 | Term | Definition |
 |------|-----------|
 | Subject DID | The DID of the entity being attested about. Always a **bare DID** (no fragment). Typically `did:web:example.com` for services or `did:pkh:eip155:1:0xABC...` for smart contracts. Subject DIDs are mutable references — the entity behind them can change keys, rotate controllers, or update their DID document. |
 | Controller DID | The DID of the entity authorized to act on behalf of a subject. A controller DID is always a **private-key DID** — it represents a specific cryptographic key. Two forms: `did:pkh:eip155:<chainId>:<address>` for EVM wallets, and `did:jwk:<base64url-encoded-public-key>` for non-EVM keys. Controller DIDs are the **immutable identity** in the system — they are derived directly from key material and cannot change. |
 | DID URL | A DID with a fragment (e.g., `did:web:api.example.com#key-1`). A DID URL is a **mutable key reference** — it points to a verification method in a DID document, but the key at that location can change if the document is updated. DID URLs are not controller DIDs. To get the durable controller identity from a DID URL, resolve it to its public key and derive a `did:jwk`. See [DID URL vs Controller DID](#did-url-vs-controller-did). |
-| did:web | A DID method that uses a web domain as the identifier. `did:web:example.com` resolves to a DID document hosted at `https://example.com/.well-known/did.json`. Commonly used for services and organizations. |
-| did:pkh | A DID method derived from a blockchain account address. `did:pkh:eip155:1:0xABC...` represents an Ethereum address. Used for smart contracts and wallets. |
-| did:jwk | A DID method where the identifier is a base64url-encoded public JWK. Self-certifying and immutable — the DID encodes the key material directly. Used as the durable controller identity for non-EVM keys. |
-| did:handle | A DID method representing a social platform handle. `did:handle:twitter:alice` represents a Twitter account. Used for cross-platform identity linking. |
-| did:key | A DID method where the identifier is a public key itself. Self-certifying — the DID encodes the key directly. |
 | Linked Identifier | A Support Attestation asserting that two DIDs are controlled by the same entity. Used for cross-platform identity linkage. |
 | Key Binding | A Support Attestation declaring that a specific cryptographic key is authorized to act on behalf of a subject DID. Includes lifecycle management (rotation, expiration, revocation). |
 | Controller Witness | A Support Attestation from a third-party witness anchoring a timestamped observation that a subject asserted a particular controller via mutable offchain state (DNS, DID document, social profile). The `subject` field is the DID being pinned (mutable reference), and the `controller` field is the `did:jwk` or `did:pkh` (immutable key material). |

@@ -1318,3 +1318,64 @@ function getExplorerAddressUrl(chainId: number, address: string): string;
 
 - Purpose: Build a block explorer URL for an address.
 - Throws: `UNSUPPORTED_CHAIN`
+
+## Schema-Aware Proof Verification
+
+Higher-level verification functions that understand attestation schema semantics. Unlike `verifyProof()` (which validates cryptographic integrity), these functions verify that proof signers match the claimed identities in the attestation.
+
+These are synchronous, offline checks. They inspect the proof objects and match signers to schema fields without fetching URLs or querying chains. Use `verifyProof()` separately for full cryptographic validation.
+
+### `verifyLinkedIdentifierProofs(data)`
+
+```ts
+type LinkedIdentifierData = {
+  subject: Did;
+  linkedId: Did;
+  proofs: ProofWrapper[];
+  attester?: string;
+};
+
+type SchemaProofVerificationResult = {
+  valid: boolean;
+  checks: SchemaProofCheck[];
+  reasons: string[];
+};
+
+type SchemaProofCheck = {
+  proofIndex: number;
+  proofType: string;
+  checkType: "signer-is-subject" | "signer-is-linkedId" | "signer-is-keyId" | "signer-is-subject-for-key";
+  valid: boolean;
+  reason?: string;
+};
+
+function verifyLinkedIdentifierProofs(data: LinkedIdentifierData): SchemaProofVerificationResult;
+```
+
+- Purpose: Verify that proofs demonstrate shared control between `subject` and `linkedId`.
+- A linked identifier attestation asserts two identities are owned by the same entity. Verification requires:
+  - At least one proof where the signer IS the subject
+  - At least one proof where the signer IS the linkedId
+- Also checks that the `authorizedEntity`/`aud` field in each proof points to the correct counterparty.
+- For non-signer identities (handles), evidence-pointer proofs are accepted.
+- Signer matching: EIP-712 uses address recovery; JWS uses embedded JWK or `iss` claim.
+
+### `verifyKeyBindingProofs(data)`
+
+```ts
+type KeyBindingData = {
+  subject: Did;
+  keyId: Did;
+  publicKeyJwk?: Record<string, unknown>;
+  proofs: ProofWrapper[];
+  attester?: string;
+};
+
+function verifyKeyBindingProofs(data: KeyBindingData): SchemaProofVerificationResult;
+```
+
+- Purpose: Verify that proofs demonstrate the subject authorized the key binding.
+- A key binding attestation asserts that the subject authorized a specific key (keyId). Verification requires:
+  - At least one proof where the signer IS the subject AND the proof's `authorizedEntity`/`aud` matches the keyId
+- Supplementary: if a proof is signed by the keyId itself, it's noted as "key proved possession" but is not sufficient alone.
+- If `publicKeyJwk` is provided and `keyId` is `did:jwk`, verifies consistency between the two (rejects if the JWK doesn't match the key encoded in the DID).
