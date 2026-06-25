@@ -302,4 +302,93 @@ function extractAuthorizationMetadata(result: JwsVerificationResult): Authorizat
 These functions handle JSON canonicalization (JCS / RFC 8785). They are used in proof seed construction (`constructSeed` in the reputation module).
 
 - `canonicalizeJson(obj: unknown): string` — JCS canonicalize any JSON-serializable object.
-- `canonicalizeForHash(obj: unknown): { jcsJson: string; hash: Hex }` — Canonicalize and return both the JCS string and its keccak256 hash.
+- `canonicalizeAndKeccak256(obj: unknown): { jcsJson: string; hash: Hex }` — Canonicalize and return both the JCS string and its keccak256 hash.
+
+
+## did:artifact — Content-Addressed DID
+
+The `did:artifact` method names immutable artifacts (files, JSON documents, packages) by their SHA-256 content hash. The method-specific identifier is a CIDv1 (raw codec, base32-lower multibase). See the [did:artifact Method Specification](https://oma3dao.github.io/omatrust-docs/specification/did-artifact-method-spec.html).
+
+### `artifactDidFromBytes(bytes)`
+
+```ts
+function artifactDidFromBytes(bytes: Uint8Array): Promise<string>;
+```
+
+- Purpose: Construct a `did:artifact` DID from raw bytes (binary artifacts, installers, archives).
+- Hashes the bytes as-is with SHA-256. No canonicalization.
+- Throws: `INVALID_INPUT` if bytes is empty or not a Uint8Array.
+
+### `artifactDidFromJson(input)`
+
+```ts
+function artifactDidFromJson(input: unknown): Promise<string>;
+```
+
+- Purpose: Construct a `did:artifact` DID from a JSON value.
+- If `input` is a string, it is parsed strictly (`parseJsonStrict` — rejects duplicate keys, excessive nesting, non-standard extensions). If `input` is an object, `assertJsonSafe` validates it (rejects NaN, Infinity, BigInt, functions, symbols, Date, RegExp). Then `canonicalizeJson` produces JCS (RFC 8785) output, and the canonical UTF-8 bytes are hashed with SHA-256.
+- This identifies the JSON *value* independent of serialization. Different key ordering or whitespace produces the same DID.
+- Throws: `INVALID_INPUT` on malformed JSON, duplicate keys, or non-JSON-safe values.
+
+### `parseArtifactDid(did)`
+
+```ts
+type ParsedArtifactDid = {
+  did: string;
+  identifier: string;
+  digest: Uint8Array;
+  digestHex: string;
+};
+function parseArtifactDid(did: string): ParsedArtifactDid;
+```
+
+- Purpose: Parse and validate a `did:artifact` DID string.
+- Validates CID version (must be 1), multicodec (must be raw/0x55), multihash function (must be sha2-256/0x12), and digest length (must be 32 bytes).
+- Returns the 32-byte SHA-256 digest.
+- Throws: `INVALID_DID` if any parameter is wrong.
+
+### `verifyDidArtifact(did, content)`
+
+```ts
+type ArtifactVerificationResult = {
+  valid: boolean;
+  matchedAs?: "json" | "binary";
+  reason?: string;
+};
+function verifyDidArtifact(
+  did: string,
+  content: Uint8Array | string | unknown
+): Promise<ArtifactVerificationResult>;
+```
+
+- Purpose: Verify that content matches a `did:artifact` DID.
+- Strategy: (1) try to canonicalize as JSON and compare the hash, (2) if that fails or doesn't match, hash the raw bytes and compare. If either matches, verification succeeds.
+- `matchedAs` indicates which interpretation matched (`"json"` or `"binary"`).
+- Returns `{ valid: false, reason }` for non-matching content or malformed DIDs — does not throw.
+
+## DID Method Migration
+
+Conversion functions for deprecated DID methods. `did:ethr` is replaced by `did:pkh:eip155` (wallets). `did:key` is replaced by `did:jwk` (non-blockchain keys).
+
+### `didEthrToDidPkh(did)`
+
+```ts
+function didEthrToDidPkh(did: string): string;
+```
+
+- Purpose: Convert a `did:ethr` DID to the equivalent `did:pkh:eip155` DID.
+- Supports formats: `did:ethr:<address>`, `did:ethr:<chainId>:<address>`, `did:ethr:<networkName>:<address>`.
+- If chain ID is omitted, defaults to 1 (Ethereum mainnet). Supports hex (`0x89`), numeric (`137`), and named networks (`mainnet`, `sepolia`, `polygon`, `arbitrum`, `optimism`, `base`, `goerli`).
+- Throws: `INVALID_DID` for invalid addresses, unknown networks, or malformed input.
+
+### `didKeyToDidJwk(did)`
+
+```ts
+function didKeyToDidJwk(did: string): string;
+```
+
+- Purpose: Convert a `did:key` DID to the equivalent `did:jwk` DID.
+- Decodes the base58btc multicodec-prefixed public key, identifies the algorithm, constructs a JWK, and wraps it as `did:jwk`.
+- Supported key types: Ed25519 (0xed), X25519 (0xec).
+- EC keys (secp256k1, P-256, P-384) are stored compressed in `did:key` and require elliptic curve decompression — these throw `UNSUPPORTED_KEY_TYPE` with a message suggesting `didEthrToDidPkh()` for EVM keys.
+- Throws: `INVALID_DID`, `UNSUPPORTED_KEY_TYPE`.

@@ -59,6 +59,29 @@ See [OMATrust Identity Specification §5.3.2](https://github.com/oma3dao/omatrus
 
 ## Identity Terms
 
+### Supported DID Methods
+
+OMATrust uses five DID methods. Each serves a distinct purpose in the identity model.
+
+| Method | Format | Purpose | Signer? |
+|--------|--------|---------|---------|
+| `did:web` | `did:web:example.com` | Domain-based identity for services and organizations. Resolves to a DID document at `/.well-known/did.json`. | Via bound keys |
+| `did:pkh` | `did:pkh:eip155:1:0xABC...` | Blockchain account identity. Uses CAIP-10 addressing — supports EVM, Solana, and other chains. The canonical method for wallet-based identities. | Yes |
+| `did:jwk` | `did:jwk:eyJrdHkiOi...` | Key-based identity for non-blockchain signing keys. The DID encodes the public JWK directly — immutable and self-certifying. Used as the durable controller identity for JWS signers. | Yes |
+| `did:artifact` | `did:artifact:bafkrei...` | Content-addressed identity for immutable artifacts (files, packages, JSON documents). The identifier is a CIDv1 encoding the SHA-256 hash of the artifact's canonical bytes. Self-verifying — any party can recompute and confirm. No keys, no controllers. | No |
+| `did:handle` | `did:handle:twitter:alice` | Platform-assigned identity for social accounts. Non-signer — relies on evidence-pointer proofs placed at platform-controlled locations. | No |
+
+### Deprecated DID Methods
+
+These methods are not supported for new attestations. Existing identifiers should be migrated using the SDK conversion functions.
+
+| Method | Replaced By | Migration |
+|--------|-------------|-----------|
+| `did:ethr` | `did:pkh:eip155` | `did:ethr` was Ethereum-only. `did:pkh` is chain-agnostic (supports EVM, Solana, Cosmos, etc.) with standard CAIP-10 addressing. Use `didEthrToDidPkh()` to convert. |
+| `did:key` | `did:jwk` | `did:key` stores compressed multicodec keys that can't cleanly round-trip to JWK for EC curves. `did:jwk` uses the standard JWK format directly — no ambiguity, no decompression needed. Use `didKeyToDidJwk()` for Ed25519/X25519 keys. For EVM wallet keys stored as `did:key`, use `didEthrToDidPkh()` instead. |
+
+### Identity Concepts
+
 | Term | Definition |
 |------|-----------|
 | Subject DID | The DID of the entity being attested about. Always a **bare DID** (no fragment). Typically `did:web:example.com` for services or `did:pkh:eip155:1:0xABC...` for smart contracts. Subject DIDs are mutable references — the entity behind them can change keys, rotate controllers, or update their DID document. |
