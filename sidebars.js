@@ -12,6 +12,17 @@ const sidebars = {
     },
     {
       type: 'category',
+      label: 'OMATrust Portal',
+      items: [
+        'portal/overview',
+        'portal/add-omachain-wallet',
+        'portal/connect-wallet',
+        'portal/publish-attestation',
+        // 'portal/view-reputation', // Not yet available in the portal
+      ],
+    },
+    {
+      type: 'category',
       label: 'Reputation',
       items: [
         'reputation/reputation-model',
@@ -179,7 +190,7 @@ const sidebars = {
     //     'app-registry/cloudinary-guide',
     //   ],
     // },
-    // Chain Architecture — hidden, see GitHub issue
+    // Chain Architecture — hidden, content outdated
     // {
     //   type: 'category',
     //   label: 'Chain Architecture',
