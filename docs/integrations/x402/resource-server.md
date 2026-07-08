@@ -18,6 +18,16 @@ This benefits your service directly:
 - **Client confidence** — New clients are more likely to use your service when existing reviews are backed by cryptographic proof that reviewers actually paid for and received the service.
 - **No extra work** — The extension is composable middleware. You configure it once and it handles signing automatically.
 
+## Minimum Integration
+
+The shortest path to a working integration:
+
+1. **Install the extension** and register it with your `x402ResourceServer` (one function call)
+2. **Publish your signing key** in a DNS TXT record or `/.well-known/did.json` (Tier 1 evidence)
+3. **Done** — your server now signs offers and receipts automatically
+
+That's it for an MVP. Controller Witness (Tier 2) and Key Binding (Tier 3) add durability and lifecycle control, but they're progressive enhancements — not prerequisites. You can add them later as your service matures.
+
 ## Prerequisites
 
 - An existing x402 resource server (or a new Express.js project). 
