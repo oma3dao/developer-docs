@@ -114,35 +114,28 @@ const sidebars = {
     },
     {
       type: 'category',
-      label: 'Integrations',
+      label: 'x402 Integration',
       items: [
         {
-          type: 'category',
-          label: 'x402 Integration',
-          items: [
-            {
-              type: 'doc',
-              id: 'integrations/x402/overview',
-              label: 'x402 Overview',
-            },
-            {
-              type: 'doc',
-              id: 'integrations/x402/resource-server',
-              label: 'Resource Server Integration',
-            },
-            {
-              type: 'doc',
-              id: 'integrations/x402/client-attestation',
-              label: 'Client Integration',
-            },
-            {
-              type: 'doc',
-              id: 'integrations/x402/client-verification',
-              label: 'Client Verification',
-            },
-          ],
+          type: 'doc',
+          id: 'integrations/x402/overview',
+          label: 'x402 Overview',
         },
-        'integrations/erc8004-integration',
+        {
+          type: 'doc',
+          id: 'integrations/x402/resource-server',
+          label: 'Resource Server Integration',
+        },
+        {
+          type: 'doc',
+          id: 'integrations/x402/client-attestation',
+          label: 'Client Integration',
+        },
+        {
+          type: 'doc',
+          id: 'integrations/x402/client-verification',
+          label: 'Client Verification',
+        },
       ],
     },
 
