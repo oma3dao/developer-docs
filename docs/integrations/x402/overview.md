@@ -29,6 +29,34 @@ This creates a natural integration point for OMATrust:
 - **Signed receipts** prove that a client paid and received service. These serve as cryptographic proof-of-interaction for User Review attestations — the equivalent of a "Verified Purchase" badge.
 - **Both artifacts are portable** — they can be lifted out of the x402 flow and submitted to OMATrust's EAS-based reputation layer as proof objects attached to attestations.
 
+## Trust Model
+
+The following shows how trust flows from a service's identity down to verifiable reputation:
+
+```text
+  resourceUrl (https://api.example.com/data)
+                    │
+                    ▼
+  did:web identity (did:web:api.example.com)
+                    │
+                    ▼
+  authorized signing key (DNS TXT / did.json / Controller Witness)
+                    │
+                    ▼
+  signed offer ──────────── signed receipt
+       │                         │
+       ▼                         ▼
+  proof of interaction ◄─────────┘
+                    │
+                    ▼
+  User Review attestation (with x402-receipt proof)
+                    │
+                    ▼
+  reputation (trust scores, third-party attestations)
+```
+
+Each layer depends on the one above it. A signed receipt is only trustworthy if the signing key is authorized by the service identity. A User Review is only "verified" if the attached receipt traces back through this chain.
+
 ## How It Works
 
 ```text

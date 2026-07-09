@@ -10,6 +10,14 @@ This guide shows how to extract signed offers and receipts from x402 payment flo
 
 A signed receipt from an x402 resource server proves you paid for and received a service. Attaching it to a User Review creates a "Verified Purchase" equivalent — verifiers can check the receipt signature to confirm you actually used the service.
 
+## When Should a Client Submit a Review?
+
+After completing an x402 payment and receiving a signed receipt, the client has cryptographic proof that the interaction occurred. At that point, if the user wants to leave feedback about the service, the client can submit a User Review attestation with the receipt attached as proof. The receipt is what makes the review "verified" — without it, the review is still valid but carries less trust weight.
+
+If the resource server does **not** return a signed receipt (perhaps it hasn't enabled the extension, or only partially supports it), the client can fall back to using the **signed offer** from the `402` response as proof instead. An offer proves the server committed to payment terms and the client paid, but does not confirm delivery. This is a weaker signal than a receipt, but still meaningful — see [Using an Offer as Proof](#using-an-offer-as-proof) for details and code.
+
+Not every transaction needs a review. Reviews are user-initiated — the client provides the mechanism, the user decides when to use it.
+
 ## Prerequisites
 
 - An x402 resource server with the offer-receipt extension enabled (see [Resource Server Integration](./resource-server))
@@ -186,6 +194,17 @@ The proof wrapper follows the OMATrust [proof specification](/reputation/verific
 ## Using an **Offer** as Proof
 
 You can also attach a signed **offer** as proof — note this is different from a receipt. An `x402-offer` proof carries a different meaning: it proves the server committed to specific commercial terms, but does **not** prove payment or delivery. This is useful when you interacted with a service but didn't receive a receipt.
+
+To extract the offer, use the same code from [Step 2](#step-2-make-a-payment-and-extract-artifacts) — the signed offers come from the initial `402` response, before any payment is made:
+
+```typescript
+// From the 402 response (no payment needed to get offers)
+const signedOffers = extractOffersFromPaymentRequired(paymentRequired);
+const decodedOffers = decodeSignedOffers(signedOffers);
+const selectedOffer = decodedOffers[0]; // verify signature first — see Step 2
+```
+
+Then attach the offer to your attestation:
 
 ```typescript
 const reviewWithOfferProof = {
