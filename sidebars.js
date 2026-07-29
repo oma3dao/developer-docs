@@ -8,6 +8,8 @@ const sidebars = {
         'start-here/definitions',
         'start-here/quickstart-publish',
         'start-here/quickstart-verify',
+        'start-here/use-case-artifact-claims',
+        'start-here/use-case-signing-keys',
       ],
     },
     {
@@ -77,6 +79,7 @@ const sidebars = {
           items: [
             'api/public-api-inventory',
             'api/trust-anchors',
+            'api/artifact-trust',
             'api/controller-confirm',
             'api/controller-endpoint-confirm',
             'api/identity-resolve',

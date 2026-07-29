@@ -9,6 +9,15 @@ These are the on-chain EAS (Ethereum Attestation Service) schema strings for eac
 
 Each schema string is a comma-separated list of ABI-typed fields that EAS uses to encode and decode attestation data on-chain.
 
+## Responsibility Claim
+
+```
+string subject, string responsibleParty, string[] responsibilityType, string subjectLabel, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt
+```
+
+- Revocable: Yes
+- Testnet UID: `0x8779...b651`
+
 ## User Review
 
 ```
@@ -110,6 +119,7 @@ Most OMATrust schemas are non-revocable. The exceptions are:
 
 - **Key Binding** — keys can be rotated or compromised, so revocation is supported
 - **Linked Identifier** — linked accounts can be unlinked, so revocation is supported
+- **Responsibility Claim** — responsibility can be transferred or relinquished, so revocation is supported
 
 Revocability is set at schema registration time and cannot be changed after deployment.
 

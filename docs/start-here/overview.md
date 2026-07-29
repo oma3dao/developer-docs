@@ -20,9 +20,10 @@ Choose your path:
 
 ## What You Can Do Today
 
+- **Claim responsibility for a file** — Publish a Responsibility Claim for any content-addressed artifact using `did:artifact`. Prove that your organization created, maintains, or distributes a specific binary, package, or document. See [Attestation Types](/reputation/attestation-types#responsibility-claim) for schema details.
+- **Publicly authorize x402 signing keys** — Use x402 signed offers and receipts as user review proof of interaction. Learn more in the [x402 Integration Guide](/integrations/x402/overview).
 - **Publish attestations** — Issue security audits, compliance certifications, endorsements, user reviews, or user review responses as cryptographically signed on-chain records. See the [Reputation section](/reputation/reputation-model) for details on attestation types and workflows.
-- **Publicly authorize x402 signing keys** — Use x402 signed offers and receipts as user review proof of interaction.  Learn more in the [x402 Integration Guide](/integrations/x402/overview)
-- **Verify a service's reputation** — Query on-chain attestations for any internet service using the [SDK](/sdk/getting-started)
+- **Verify a service's reputation** — Query on-chain attestations for any internet service using the [SDK](/sdk/getting-started).
 - **Integrate trust checks** — Add reputation verification to your app, API, or AI agent in a few lines of code. See the [SDK API Reference](/sdk/api-reference/reputation-sdk) for function signatures.
 
 ## Who This Is For

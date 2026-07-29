@@ -55,6 +55,21 @@ After fetching attestations, run them through the [Verification Flow](/reputatio
 
 Then interpret the results based on the attestation type.
 
+### Responsibility Claims
+
+Responsibility Claims answer the question: "who published this file?" Given an artifact (binary, package, document), you can verify provenance:
+
+1. Compute the `did:artifact` from the file bytes (using `artifactDidFromBytes()` from the SDK)
+2. Query Responsibility Claim attestations for that `did:artifact`
+3. For each claim, verify:
+   - **Controller authorization** — is the attester authorized to act on behalf of the `responsibleParty`?
+   - **Authorization window** — was the claim issued during the attester's valid authorization period?
+   - **Lifecycle** — is the claim currently effective and not expired?
+   - **Revocation** — has the claim been revoked?
+4. A claim that passes all checks proves the `responsibleParty` publicly accepted the stated responsibilities for that exact file content
+
+The SDK provides `getVerifiedArtifactAttestations()` for high-level artifact verification, and `isArtifactClaimedBy()` as a convenience check for a specific responsible party.
+
 ### User Reviews
 
 User Reviews are the most common reputation signal. Key interpretation points:
