@@ -22,6 +22,8 @@ Most developers should start with the high-level functions:
 - `getAttestation`
 - `listAttestations`
 - `verifyAttestation`
+- `getVerifiedArtifactAttestations`
+- `isArtifactClaimedBy`
 - `requestControllerWitness`
 - `getControllerAuthorization`
 - `verifySubjectOwnership`
@@ -326,6 +328,104 @@ function verifyAttestation(params: VerifyAttestationParams): Promise<VerifyAttes
 - `context` is an optional bag of values passed to individual proof verifiers. Recognized keys: `subjectDid` (the subject DID) and `controllerDid` (the controller DID).
 - `reasons` contains human-readable explanations for any failed checks.
 - Throws: `PROOF_VERIFICATION_FAILED`, `NETWORK_ERROR`
+
+### `getVerifiedArtifactAttestations(params)`
+
+```ts
+type GetVerifiedArtifactAttestationsParams = {
+  artifactDid: string;
+  provider: unknown;             // ethers v6 Provider
+  easContractAddress: Hex;
+  chainId: number;
+  schemaUids: Hex[];             // Schema UIDs to query on this chain
+  responsibilityClaimSchemaUid: Hex;
+  responsibilityClaimSchemaString: string;
+  chain?: string;                // CAIP-2 identifier (e.g. "eip155:66238")
+  securityAssessmentSchemaUid?: Hex;
+  certificationSchemaUid?: Hex;
+  fromBlock?: number;
+  limit?: number;
+};
+
+type VerifyResponsibilityClaimResult = {
+  valid: boolean;
+  responsibleParty: string;
+  controllerDid: string;
+  responsibilityTypes: string[];
+  subjectLabel?: string;
+  authorization: ControllerAuthorizationResult | null;
+  checks: {
+    schemaValid: boolean;
+    subjectMatches: boolean;
+    notRevoked: boolean;
+    currentlyEffective: boolean;
+    controllerAuthorized: boolean;
+    issuedDuringAuthorizationWindow: boolean;
+  };
+  reasons: string[];
+};
+
+type VerifiedResponsibilityClaim = {
+  attestation: AttestationQueryResult;
+  verification: VerifyResponsibilityClaimResult;
+};
+
+type VerifiedArtifactAttestation = {
+  attestation: AttestationQueryResult;
+  verification?: VerifyAttestationResult;
+};
+
+type GetVerifiedArtifactAttestationsResult = {
+  artifactDid: string;
+  responsibilityClaims: VerifiedResponsibilityClaim[];
+  securityAssessments: VerifiedArtifactAttestation[];
+  certifications: VerifiedArtifactAttestation[];
+  otherAttestations: VerifiedArtifactAttestation[];
+};
+
+function getVerifiedArtifactAttestations(
+  params: GetVerifiedArtifactAttestationsParams
+): Promise<GetVerifiedArtifactAttestationsResult>;
+```
+
+- Purpose: Query and verify attestations bound to a `did:artifact`, grouping Responsibility Claims, security assessments, certifications, and other evidence.
+- Responsibility Claims are verified with controller-authorization checks against `responsibleParty` (not the artifact DID). Other schemas use standard `verifyAttestation`.
+- Unlike the HTTP [Artifact Trust API](/api/artifact-trust), SDK responsibility-claim `verification` includes decoded fields (`responsibleParty`, `responsibilityTypes`, `checks`, etc.). The HTTP API returns `verification: { valid, basis[] }` and keeps claim fields under `attestation.data`.
+- Throws: `INVALID_INPUT`, `NETWORK_ERROR`
+
+### `isArtifactClaimedBy(params)`
+
+```ts
+type IsArtifactClaimedByParams = {
+  artifactDid: string;
+  responsibleParty: string;
+  provider: unknown;             // ethers v6 Provider
+  easContractAddress: Hex;
+  chainId: number;
+  schemaUids: Hex[];
+  responsibilityClaimSchemaUid: Hex;
+  responsibilityClaimSchemaString: string;
+  chain?: string;
+  securityAssessmentSchemaUid?: Hex;
+  certificationSchemaUid?: Hex;
+  responsibilityTypes?: string[]; // Optional filter (e.g. ["creator", "maintainer"])
+};
+
+type IsArtifactClaimedByResult = {
+  claimed: boolean;
+  claims: VerifiedResponsibilityClaim[];
+  matchedResponsibilityTypes: string[];
+  reasons: string[];
+};
+
+function isArtifactClaimedBy(
+  params: IsArtifactClaimedByParams
+): Promise<IsArtifactClaimedByResult>;
+```
+
+- Purpose: Convenience check for whether a specific responsible party has a verified Responsibility Claim on an artifact.
+- Internally calls `getVerifiedArtifactAttestations`, then filters by `responsibleParty` (case-insensitive) and optional `responsibilityTypes`.
+- Throws: `INVALID_INPUT`, `NETWORK_ERROR`
 
 ### `callControllerWitness(params)`
 

@@ -16,7 +16,7 @@ string subject, string responsibleParty, string[] responsibilityType, string sub
 ```
 
 - Revocable: Yes
-- Testnet UID: `0x8779...b651`
+- Testnet UID: `0x877911f942a77a527661b288f8b0f6703fe461286bbf2e4a71967e2f2ec1b651`
 
 ## User Review
 

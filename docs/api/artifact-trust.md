@@ -78,7 +78,7 @@ curl --get "https://api.omatrust.org/v1/artifact-trust" \
         "data": {
           "subject": "did:artifact:bafk...",
           "responsibleParty": "did:web:publisher.example",
-          "responsibilityType": ["publisher", "maintainer"],
+          "responsibilityType": ["creator", "maintainer"],
           "subjectLabel": "Example plugin",
           "issuedAt": "1784822400",
           "effectiveAt": "1784822400",

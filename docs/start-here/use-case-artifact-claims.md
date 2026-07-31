@@ -27,9 +27,14 @@ import { artifactDidFromBytes } from "@oma3/omatrust/identity";
 import { submitAttestation } from "@oma3/omatrust/reputation";
 import { readFileSync } from "fs";
 
+const RESPONSIBILITY_CLAIM_SCHEMA =
+  "string subject, string responsibleParty, string[] responsibilityType, string subjectLabel, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt";
+const RESPONSIBILITY_CLAIM_UID =
+  "0x877911f942a77a527661b288f8b0f6703fe461286bbf2e4a71967e2f2ec1b651";
+
 // 1. Compute the did:artifact from the file
 const fileBytes = readFileSync("./my-package-v2.1.0.tar.gz");
-const artifactDid = artifactDidFromBytes(fileBytes);
+const artifactDid = await artifactDidFromBytes(fileBytes);
 // → "did:artifact:bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhc4yeq"
 
 // 2. Publish a Responsibility Claim
@@ -37,8 +42,8 @@ const result = await submitAttestation({
   signer,
   chainId: 66238,
   easContractAddress: "0x8835AF90f1537777F52E482C8630cE4e947eCa32",
-  schemaUid: "0x8779...b651",  // Responsibility Claim schema
-  schema: "string subject, string responsibleParty, string[] responsibilityType, string subjectLabel, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt",
+  schemaUid: RESPONSIBILITY_CLAIM_UID,
+  schema: RESPONSIBILITY_CLAIM_SCHEMA,
   data: {
     subject: artifactDid,
     responsibleParty: "did:web:your-organization.com",
@@ -61,23 +66,40 @@ import { artifactDidFromBytes } from "@oma3/omatrust/identity";
 import { getVerifiedArtifactAttestations } from "@oma3/omatrust/reputation";
 import { readFileSync } from "fs";
 
+const RESPONSIBILITY_CLAIM_SCHEMA =
+  "string subject, string responsibleParty, string[] responsibilityType, string subjectLabel, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt";
+const RESPONSIBILITY_CLAIM_UID =
+  "0x877911f942a77a527661b288f8b0f6703fe461286bbf2e4a71967e2f2ec1b651";
+
 // Compute the DID from the file you want to verify
 const fileBytes = readFileSync("./my-package-v2.1.0.tar.gz");
-const artifactDid = artifactDidFromBytes(fileBytes);
+const artifactDid = await artifactDidFromBytes(fileBytes);
 
 // Query and verify all attestations for this artifact
 const result = await getVerifiedArtifactAttestations({
   artifactDid,
   provider,
   easContractAddress: "0x8835AF90f1537777F52E482C8630cE4e947eCa32",
+  chainId: 66238,
+  schemaUids: [RESPONSIBILITY_CLAIM_UID],
+  responsibilityClaimSchemaUid: RESPONSIBILITY_CLAIM_UID,
+  responsibilityClaimSchemaString: RESPONSIBILITY_CLAIM_SCHEMA,
 });
 
 for (const claim of result.responsibilityClaims) {
+  // SDK verification is richer than the HTTP Artifact Trust API's
+  // { valid, basis[] } shape — it includes decoded claim fields and checks.
   console.log(claim.verification.responsibleParty);   // "did:web:your-organization.com"
   console.log(claim.verification.responsibilityTypes); // ["creator", "maintainer"]
   console.log(claim.verification.valid);               // true
 }
 ```
+
+For a gateway-hosted lookup without an RPC provider, use the
+[Artifact Trust API](/api/artifact-trust). That HTTP response uses
+`verification: { valid, basis[] }` and keeps claim fields under
+`attestation.data` — it does not enrich `verification` with
+`responsibleParty` / `responsibilityTypes`.
 
 ## Using the Portal (No Code)
 
@@ -98,3 +120,4 @@ You can also publish and verify Responsibility Claims through the [OMATrust Port
 - [Issuer Workflow](/reputation/issuer-workflow) — General attestation creation guide
 - [Use Case: Authorize Signing Keys](/start-here/use-case-signing-keys) — Establish controller authorization before claiming
 - [Consumer Workflow: Responsibility Claims](/reputation/consumer-workflow#responsibility-claims) — How consumers verify claims
+- [Reputation SDK Reference](/sdk/api-reference/reputation-sdk#getverifiedartifactattestationsparams) — `getVerifiedArtifactAttestations` / `isArtifactClaimedBy` signatures
