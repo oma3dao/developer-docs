@@ -28,7 +28,7 @@ import { submitAttestation } from "@oma3/omatrust/reputation";
 import { readFileSync } from "fs";
 
 const RESPONSIBILITY_CLAIM_SCHEMA =
-  "string subject, string responsibleParty, string[] responsibilityType, string subjectLabel, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt";
+  "string responsibleParty, string subject, string subjectLabel, string[] responsibilityType, string[] proofs, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt";
 const RESPONSIBILITY_CLAIM_UID =
   "0x877911f942a77a527661b288f8b0f6703fe461286bbf2e4a71967e2f2ec1b651";
 
@@ -45,10 +45,11 @@ const result = await submitAttestation({
   schemaUid: RESPONSIBILITY_CLAIM_UID,
   schema: RESPONSIBILITY_CLAIM_SCHEMA,
   data: {
-    subject: artifactDid,
     responsibleParty: "did:web:your-organization.com",
-    responsibilityType: ["creator", "maintainer"],
+    subject: artifactDid,
     subjectLabel: "my-package-v2.1.0.tar.gz",
+    responsibilityType: ["creator", "maintainer"],
+    proofs: [],
     issuedAt: Math.floor(Date.now() / 1000),
     effectiveAt: Math.floor(Date.now() / 1000),
     expiresAt: 0,  // No expiration
@@ -67,7 +68,7 @@ import { getVerifiedArtifactAttestations } from "@oma3/omatrust/reputation";
 import { readFileSync } from "fs";
 
 const RESPONSIBILITY_CLAIM_SCHEMA =
-  "string subject, string responsibleParty, string[] responsibilityType, string subjectLabel, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt";
+  "string responsibleParty, string subject, string subjectLabel, string[] responsibilityType, string[] proofs, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt";
 const RESPONSIBILITY_CLAIM_UID =
   "0x877911f942a77a527661b288f8b0f6703fe461286bbf2e4a71967e2f2ec1b651";
 

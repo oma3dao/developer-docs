@@ -12,7 +12,7 @@ Each schema string is a comma-separated list of ABI-typed fields that EAS uses t
 ## Responsibility Claim
 
 ```
-string subject, string responsibleParty, string[] responsibilityType, string subjectLabel, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt
+string responsibleParty, string subject, string subjectLabel, string[] responsibilityType, string[] proofs, uint256 issuedAt, uint256 effectiveAt, uint256 expiresAt
 ```
 
 - Revocable: Yes

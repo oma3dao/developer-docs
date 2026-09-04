@@ -76,10 +76,11 @@ curl --get "https://api.omatrust.org/v1/artifact-trust" \
         "expirationTime": "0",
         "revocationTime": "0",
         "data": {
-          "subject": "did:artifact:bafk...",
           "responsibleParty": "did:web:publisher.example",
-          "responsibilityType": ["creator", "maintainer"],
+          "subject": "did:artifact:bafk...",
           "subjectLabel": "Example plugin",
+          "responsibilityType": ["creator", "maintainer"],
+          "proofs": [],
           "issuedAt": "1784822400",
           "effectiveAt": "1784822400",
           "expiresAt": "0"
@@ -142,7 +143,6 @@ curl --get "https://api.omatrust.org/v1/artifact-trust" \
         "data": {
           "subject": "did:artifact:bafk...",
           "linkedId": "did:web:publisher.example",
-          "method": "controller",
           "proofs": ["..."],
           "issuedAt": "1784822400",
           "effectiveAt": "1784822400",

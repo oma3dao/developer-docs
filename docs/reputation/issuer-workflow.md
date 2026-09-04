@@ -75,10 +75,11 @@ Add type-specific fields as defined in [Attestation Types](/reputation/attestati
 ```json
 {
   "attester": "did:pkh:eip155:66238:0xYourControllerWallet",
-  "subject": "did:artifact:bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhc4yeq",
   "responsibleParty": "did:web:your-organization.com",
-  "responsibilityType": ["creator", "maintainer"],
+  "subject": "did:artifact:bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhc4yeq",
   "subjectLabel": "my-package-v2.1.0.tar.gz",
+  "responsibilityType": ["creator", "maintainer"],
+  "proofs": [],
   "issuedAt": 1720000000,
   "effectiveAt": 1720000000,
   "expiresAt": 0
