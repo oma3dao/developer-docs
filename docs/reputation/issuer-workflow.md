@@ -14,6 +14,7 @@ Anyone can create an attestation. However, many attestation types only carry mea
 |-----------------|-----------------|----------------------------|
 | User Review | End users, platform intermediaries | No — anyone can review |
 | User Review Response | Service operators, authorized delegates | No — but responder coherence is verified |
+| Responsibility Claim | Software publishers, package maintainers, content distributors | No — but controller authorization is verified |
 | Linked Identifier | The entity controlling both identifiers, or a trusted verifier | No — but proofs are needed for trustless validation |
 | Key Binding | The entity controlling the subject DID | No — but proofs are required |
 | Controller Witness | Witness servers | Yes — consumers maintain witness allowlists |
@@ -47,6 +48,7 @@ You can create attestations programmatically via the SDK, or use the web interfa
 
 Select the attestation type that matches your use case:
 
+- Claiming responsibility for a file, binary, or package? → **Responsibility Claim**
 - Proving identity linkage? → **Linked Identifier**
 - Authorizing a signing key? → **Key Binding**
 - Witnessing an offchain controller assertion? → **Controller Witness**
@@ -68,7 +70,23 @@ Build the attestation object conforming to the schema. All attestations share co
 }
 ```
 
-Add type-specific fields as defined in [Attestation Types](/reputation/attestation-types). For example, a User Review:
+Add type-specific fields as defined in [Attestation Types](/reputation/attestation-types). For example, a Responsibility Claim for an artifact:
+
+```json
+{
+  "attester": "did:pkh:eip155:66238:0xYourControllerWallet",
+  "responsibleParty": "did:web:your-organization.com",
+  "subject": "did:artifact:bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhc4yeq",
+  "subjectLabel": "my-package-v2.1.0.tar.gz",
+  "responsibilityType": ["creator", "maintainer"],
+  "proofs": [],
+  "issuedAt": 1720000000,
+  "effectiveAt": 1720000000,
+  "expiresAt": 0
+}
+```
+
+Or a User Review:
 
 ```json
 {

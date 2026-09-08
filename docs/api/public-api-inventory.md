@@ -14,11 +14,15 @@ https://api.omatrust.org/v1
 
 Product frontends such as `registry.omatrust.org` and `reputation.omatrust.org` may still expose application-local routes, but those should be treated as implementation details unless they are also documented here.
 
+The Artifact Trust API is available through the API gateway at
+`/v1/artifact-trust`. Prefer that public URL over backend-origin paths.
+
 ## Gateway APIs
 
 | Public endpoint | Method | Upstream service | Current use |
 | --- | --- | --- | --- |
 | `/v1/trust-anchors` | GET | OMATrust backend | Returns OMA3 trust anchors including chain, schema, widget origin, and registry anchors. |
+| `/v1/artifact-trust` | GET | OMATrust backend | Returns verified OMATrust evidence for a `did:artifact`. See [Artifact Trust API](./artifact-trust.md). |
 | `/v1/controller-endpoint-confirm` | GET | OMATrust backend | Checks endpoint-published controller keys from DNS, `did.json`. |
 | `/v1/controller-confirm` | GET | OMATrust backend | Resolves current controller evidence, account-wallet evidence, and approved issuer status. |
 | `/v1/identity-resolve` | POST | OMATrust backend | Resolves identifiers into canonical forms and display labels. |
@@ -47,6 +51,7 @@ These routes exist in product repositories and are useful for local development 
 | `rep-attestation-frontend` | `/api/eas/delegated-attest` | POST | Local delegated attestation route. Public equivalent: `/v1/delegated-attest`. |
 | `rep-attestation-frontend` | `/api/controller-witness-proxy` | POST | Frontend proxy to controller witness service. Public equivalent: `/v1/controller-witness`. |
 | `omatrust-backend` | `/api/public/trust-anchors` | GET | Backend origin for `/v1/trust-anchors`. |
+| `omatrust-backend` | `/api/public/artifact-trust` | GET | Backend origin for `/v1/artifact-trust`. Public verified evidence lookup for a `did:artifact`. See [Artifact Trust API](./artifact-trust.md). |
 | `omatrust-backend` | `/api/public/controller-endpoint-confirm` | GET | Backend origin for `/v1/controller-endpoint-confirm`. |
 | `omatrust-backend` | `/api/public/controller-confirm` | GET | Backend origin for `/v1/controller-confirm`. |
 | `omatrust-backend` | `/api/public/identity-resolve` | POST | Backend origin for `/v1/identity-resolve`. |

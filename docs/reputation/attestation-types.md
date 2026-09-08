@@ -68,6 +68,23 @@ Schema: [controller-witness.schema.json](https://github.com/oma3dao/rep-attestat
 
 These are the trust signals that consumers use to evaluate services.
 
+### Responsibility Claim
+
+Declares that a responsible party (identified by DID) accepts a specific responsibility — creator, distributor, or maintainer — for a subject. The subject is typically a `did:artifact` (a content-addressed identifier derived from the SHA-256 hash of a file), but can also be any other DID type for future use cases (APIs, websites, agents).
+
+Responsibility Claims enable verifiable provenance: given a binary, package, or document, anyone can compute its `did:artifact` and look up who has publicly claimed responsibility for it.
+
+Key behaviors:
+- The `attester` must be an authorized controller of the `responsibleParty` DID (verified via `getControllerAuthorization()`)
+- The attestation's `issuedAt` must fall within the controller's authorization window
+- `responsibilityType` is a multi-value field using values from the `x-oma3-enum`: `creator`, `distributor`, `maintainer`
+- `effectiveAt` and `expiresAt` control the claim's lifecycle
+- Verification checks: schema validity, subject match, not revoked, currently effective, controller authorized, issued during authorization window
+
+Schema: [responsibility-claim.schema.json](https://github.com/oma3dao/rep-attestation-tools-evm-solidity/blob/main/schemas-json/responsibility-claim.schema.json) · Spec: [Reputation Specification §7.6](https://github.com/oma3dao/omatrust-docs/blob/main/specification/omatrust-specification-reputation.md)
+
+---
+
 ### User Review
 
 A structured 1–5 star review of a service or application. User Reviews are the primary mechanism for end-user feedback in OMATrust.

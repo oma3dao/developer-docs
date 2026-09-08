@@ -13,6 +13,7 @@ The schema files live in the `schemas-json/` directory of the [`rep-attestation-
 
 | Schema | File | Description |
 | --- | --- | --- |
+| Responsibility Claim | `responsibility-claim.schema.json` | Declares that a responsible party accepts creator, distributor, or maintainer responsibility for a subject (typically a `did:artifact`) |
 | User Review | `user-review.schema.json` | Structured 1–5 star reviews of tokenized applications or digital services |
 | User Review Response | `user-review-response.schema.json` | Responses to user reviews (from the reviewed subject) |
 | Endorsement | `endorsement.schema.json` | Lightweight attestation indicating support, trust, or approval for a subject |
